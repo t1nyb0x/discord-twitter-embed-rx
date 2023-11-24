@@ -1,5 +1,5 @@
-import dotenv from "dotenv";
 import { Client, Message, GatewayIntentBits } from "discord.js";
+import dotenv from "dotenv";
 
 dotenv.config();
 const ENV = process.env.ENVIRONMENT;
@@ -38,8 +38,10 @@ client.on("ready", async () => {
 client.on("messageCreate", async (m: Message) => {
   if ((client.user !== null && m.author.id === client.user.id) || m.author.bot) return;
 
+  // https://twitter.com(or x.com)/hogehoge/{postID}かチェック
   const matchRes = m.content.match(/https:\/\/(x|twitter)\.com\/[A-Za-z_0-9]+\/status\/[0-9]+/g);
   if (matchRes) {
+    // /x or /twitterを/vxtwitterに置き換え
     const vxurl = matchRes.map((t) => t.replace(/\/(x|twitter)/, "/vxtwitter")).join("\n");
     m.channel.send(vxurl);
   }
