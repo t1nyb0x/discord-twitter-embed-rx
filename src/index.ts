@@ -1,5 +1,7 @@
 import { Client, Message, GatewayIntentBits } from "discord.js";
 import dotenv from "dotenv";
+import { PostEmbed } from "./postEmbed";
+import { VxTwitterApi } from "./vxtwitter/api";
 
 dotenv.config();
 const ENV = process.env.ENVIRONMENT;
@@ -42,7 +44,15 @@ client.on("messageCreate", async (m: Message) => {
   const matchRes = m.content.match(/https:\/\/(x|twitter)\.com\/[A-Za-z_0-9]+\/status\/[0-9]+/g);
   if (matchRes) {
     // /x or /twitterを/vxtwitterに置き換え
-    const vxurl = matchRes.map((t) => t.replace(/\/(x|twitter)/, "/vxtwitter")).join("\n");
-    m.channel.send(vxurl);
+    const vxurl = matchRes.map((t) => t.replace(/\/(x|twitter)/, "/api.vxtwitter"));
+
+    vxurl.map(async (url) => {
+      const vxtwitterapi = new VxTwitterApi();
+      const postInfo = await vxtwitterapi.getPostInformation(url);
+
+      const postEmbed = new PostEmbed();
+      const embedPostInfo = postEmbed.createEmbed(postInfo);
+      m.channel.send({ embeds: [embedPostInfo] });
+    });
   }
 });

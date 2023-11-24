@@ -19,7 +19,7 @@
         "import"
     ],
     "rules": {
-        "semi": ["on", "always"],
+        "semi": [2, "always"],
         "import/order": [2, {"alphabetize": {"order": "asc"}}]
     }
 }
