@@ -1,0 +1,5 @@
+version: '3'
+services:
+  reply-vxtwitter:
+    build: .
+    restart: always
