@@ -43,7 +43,7 @@ client.on("messageCreate", async (m: Message) => {
   // https://twitter.com(or x.com)/hogehoge/{postID}かチェック
   const matchRes = m.content.match(/https:\/\/(x|twitter)\.com\/[A-Za-z_0-9]+\/status\/[0-9]+/g);
   if (matchRes) {
-    // /x or /twitterを/vxtwitterに置き換え
+    // /x or /twitterを/api.vxtwitterに置き換え
     const vxurl = matchRes.map((t) => t.replace(/\/(x|twitter)/, "/api.vxtwitter"));
 
     vxurl.map(async (url) => {
@@ -51,8 +51,13 @@ client.on("messageCreate", async (m: Message) => {
       const postInfo = await vxtwitterapi.getPostInformation(url);
 
       const postEmbed = new PostEmbed();
-      const embedPostInfo = postEmbed.createEmbed(postInfo);
-      m.channel.send({ embeds: [embedPostInfo] });
+      if (postInfo.mediaURLs.length > 1) {
+        const embedPostInfo = postEmbed.createMultiImageEmbed(postInfo);
+        m.channel.send({ embeds: embedPostInfo });
+      } else {
+        const embedPostInfo = postEmbed.createEmbed(postInfo);
+        m.channel.send({ embeds: [embedPostInfo] });
+      }
     });
   }
 });
