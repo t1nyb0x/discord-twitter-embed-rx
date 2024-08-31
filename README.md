@@ -33,4 +33,5 @@ productionとdevelopがありますが、どちらを設定しても動作に変
 
 ### Dockerを利用する場合
 
-`docker compose up -d` でそのまま使用できます。
+1. `cp compose.yml.example compose.yml` を実行
+2. `docker compose up -d` で立ち上がります

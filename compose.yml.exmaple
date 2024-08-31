@@ -1,5 +1,5 @@
-version: '3'
 services:
   reply-vxtwitter:
+    container_name: reply-vxtwitter
     build: .
     restart: always
