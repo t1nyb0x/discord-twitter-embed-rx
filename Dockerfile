@@ -1,4 +1,4 @@
-FROM --platform=$BUILDPLATFORM node:20.12.1-alpine3.19
+FROM --platform=$BUILDPLATFORM node:20.18.0-alpine3.20
 
 WORKDIR /replyvxtwitter
 
