@@ -4,8 +4,8 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "start": "node ./dist/index.js",
-    "debug": "ts-node ./src/index.ts",
+    "start": "node --env-file=.env ./dist/index.js",
+    "debug": "node --env-file=.env -r ts-node/register ./src/index.ts",
     "compile": "tsc -p .",
     "compile:test": "tsc -p . --noEmit",
     "test": "echo \"Error: no test specified\" && exit 1",
@@ -41,20 +41,20 @@
   },
   "homepage": "https://github.com/t1nyb0x/replyvxtwitter#readme",
   "devDependencies": {
-    "@typescript-eslint/eslint-plugin": "^6.11.0",
-    "@typescript-eslint/parser": "^6.11.0",
-    "eslint": "^8.54.0",
-    "eslint-config-prettier": "^9.0.0",
-    "eslint-import-resolver-typescript": "^3.6.1",
-    "husky": "^8.0.3",
-    "lint-staged": "^15.1.0",
-    "prettier": "^3.1.0",
-    "typescript": "^5.2.2"
+    "@eslint/compat": "^1.2.1",
+    "@typescript-eslint/eslint-plugin": "^8.11.0",
+    "@typescript-eslint/parser": "^8.11.0",
+    "eslint": "^9.13.0",
+    "eslint-config-prettier": "^9.1.0",
+    "eslint-plugin-import": "^2.31.0",
+    "husky": "^9.1.6",
+    "lint-staged": "^15.2.10",
+    "prettier": "^3.3.3",
+    "typescript": "^5.6.3"
   },
   "dependencies": {
-    "axios": "^1.6.2",
+    "axios": "^1.7.7",
     "discord.js": "^14.16.3",
-    "dotenv": "^16.3.1",
-    "ts-node": "^10.9.1"
+    "ts-node": "^10.9.2"
   }
 }

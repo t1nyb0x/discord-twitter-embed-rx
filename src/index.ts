@@ -1,9 +1,7 @@
 import { Client, Message, GatewayIntentBits, ChannelType } from "discord.js";
-import dotenv from "dotenv";
 import { PostEmbed } from "./postEmbed";
 import { VxTwitterApi } from "./vxtwitter/api";
 
-dotenv.config();
 const ENV = process.env.ENVIRONMENT;
 
 let token: string | undefined;
