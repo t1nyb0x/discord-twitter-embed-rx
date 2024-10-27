@@ -6,6 +6,6 @@ COPY ["package.json", "./", "package-lock.json", "./"]
 COPY ["tsconfig.json", "./"]
 COPY ["./src", "./src"]
 
-RUN npm i && npm run compile
+RUN npm i
 
 CMD ["npm", "start"]

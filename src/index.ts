@@ -1,4 +1,4 @@
-import { Client, Message, GatewayIntentBits } from "discord.js";
+import { Client, Message, GatewayIntentBits, ChannelType } from "discord.js";
 import dotenv from "dotenv";
 import { PostEmbed } from "./postEmbed";
 import { VxTwitterApi } from "./vxtwitter/api";
@@ -44,19 +44,26 @@ client.on("messageCreate", async (m: Message) => {
   const matchRes = m.content.match(/https:\/\/(x|twitter)\.com\/[A-Za-z_0-9]+\/status\/[0-9]+/g);
   if (matchRes) {
     // /x or /twitterを/api.vxtwitterに置き換え
-    const vxurl = matchRes.map((t) => t.replace(/\/(x|twitter)/, "/api.vxtwitter"));
+    const vxurl = matchRes.map((t: string) => t.replace(/\/(x|twitter)/, "/api.vxtwitter"));
 
-    vxurl.map(async (url) => {
+    vxurl.map(async (url: string) => {
       const vxtwitterapi = new VxTwitterApi();
       const postInfo = await vxtwitterapi.getPostInformation(url);
+
+      // 元URLの埋め込みを削除する
+      await m.suppressEmbeds(true);
 
       const postEmbed = new PostEmbed();
       if (postInfo.mediaURLs.length > 1) {
         const embedPostInfo = postEmbed.createMultiImageEmbed(postInfo);
-        m.channel.send({ embeds: embedPostInfo });
+        if (m.channel.type === ChannelType.GuildText) {
+          await m.channel.send({ embeds: embedPostInfo });
+        }
       } else {
         const embedPostInfo = postEmbed.createEmbed(postInfo);
-        m.channel.send({ embeds: [embedPostInfo] });
+        if (m.channel.type === ChannelType.GuildText) {
+          await m.channel.send({ embeds: [embedPostInfo] });
+        }
       }
     });
   }
