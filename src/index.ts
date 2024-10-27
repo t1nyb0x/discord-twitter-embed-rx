@@ -50,16 +50,19 @@ client.on("messageCreate", async (m: Message) => {
       const vxtwitterapi = new VxTwitterApi();
       const postInfo = await vxtwitterapi.getPostInformation(url);
 
+      // 元URLの埋め込みを削除する
+      await m.suppressEmbeds(true);
+
       const postEmbed = new PostEmbed();
       if (postInfo.mediaURLs.length > 1) {
         const embedPostInfo = postEmbed.createMultiImageEmbed(postInfo);
         if (m.channel.type === ChannelType.GuildText) {
-          m.channel.send({ embeds: embedPostInfo });
+          await m.channel.send({ embeds: embedPostInfo });
         }
       } else {
         const embedPostInfo = postEmbed.createEmbed(postInfo);
         if (m.channel.type === ChannelType.GuildText) {
-          m.channel.send({ embeds: [embedPostInfo] });
+          await m.channel.send({ embeds: [embedPostInfo] });
         }
       }
     });
