@@ -1,4 +1,4 @@
-name: deploy vps
+name: deploy to vps
 on:
   push:
     branches:
@@ -13,15 +13,17 @@ jobs:
       - name: Setup SSH
         env:
           SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+          SSH_KNOWN_HOSTS: ${{ secrets.SSH_KNOWN_HOSTS }}
         run: |
           mkdir -p ~/.ssh/
           echo "$SSH_PRIVATE_KEY" > ~/.ssh/deploy_key
           chmod 600 ~/.ssh/deploy_key
+          echo "$SSH_KNOWN_HOSTS" > ~/.ssh/known_hosts
 
       - name: Restart Application
         env:
           SSH_USER: ${{ secrets.SSH_USER }}
           VPS_HOST: ${{ secrets.VPS_HOST }}
-          DEPLOY_PATH: ${{ secrets.DEPLOY_PATH }}
+          SSH_PORT: ${{ secrets.SSH_PORT }}
         run: |
-          ssh -i ~/.ssh/deploy_key $SSH_USER@$VPS_HOST 'cd $DEPLOY_PATH && git pull origin && docker compose up -d --build'
+          ssh -o StrictHostKeyChecking=no -i ~/.ssh/deploy_key $SSH_USER@$VPS_HOST -p $SSH_PORT 'cd replyvxtwitter && git pull origin && docker compose up -d --build'
