@@ -1,4 +1,4 @@
-export interface Vxtwitter {
+export interface VxTwitter {
   communityNote: string | null;
   conversationID: string;
   date: string;

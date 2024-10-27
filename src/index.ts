@@ -52,16 +52,10 @@ client.on("messageCreate", async (m: Message) => {
       await m.suppressEmbeds(true);
 
       const postEmbed = new PostEmbed();
-      if (postInfo.mediaURLs.length > 1) {
-        const embedPostInfo = postEmbed.createMultiImageEmbed(postInfo);
-        if (m.channel.type === ChannelType.GuildText) {
-          await m.channel.send({ embeds: embedPostInfo });
-        }
-      } else {
-        const embedPostInfo = postEmbed.createEmbed(postInfo);
-        if (m.channel.type === ChannelType.GuildText) {
-          await m.channel.send({ embeds: [embedPostInfo] });
-        }
+
+      const embedPostInfo = postEmbed.createEmbed(postInfo);
+      if (m.channel.type === ChannelType.GuildText) {
+        await m.channel.send({ embeds: embedPostInfo });
       }
     });
   }
