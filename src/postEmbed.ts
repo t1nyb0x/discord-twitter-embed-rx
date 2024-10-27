@@ -7,7 +7,7 @@ export class PostEmbed {
       const embed = new EmbedBuilder()
         .setAuthor({
           name: postInfo.user_name,
-          url: "https://twitter.com/" + postInfo.user_screen_name,
+          url: "https://x.com/" + postInfo.user_screen_name,
           iconURL: postInfo.user_profile_image_url,
         })
         .setTitle(postInfo.user_name)
