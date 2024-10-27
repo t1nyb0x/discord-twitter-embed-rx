@@ -14,14 +14,16 @@ export class PostEmbed {
       .setDescription(postInfo.text)
       .setColor(9016025)
       .setTimestamp(new Date(postInfo.date))
-      .setImage(postInfo.mediaURLs[0]);
+      .setImage(
+        !/\.mp4$/.test(postInfo.mediaURLs[0]) ? postInfo.mediaURLs[0] : postInfo.media_extended[0].thumbnail_url
+      );
 
     return embed;
   }
 
   createMultiImageEmbed(postInfo: Vxtwitter): EmbedBuilder[] {
     const embeds: EmbedBuilder[] = [];
-    postInfo.mediaURLs.map((mediaURL) => {
+    postInfo.mediaURLs.map((mediaURL, index) => {
       const embed = new EmbedBuilder()
         .setAuthor({
           name: postInfo.user_name,
@@ -33,7 +35,7 @@ export class PostEmbed {
         .setDescription(postInfo.text)
         .setColor(9016025)
         .setTimestamp(new Date(postInfo.date))
-        .setImage(mediaURL);
+        .setImage(!/\.mp4$/.test(mediaURL) ? mediaURL : postInfo.media_extended[index].thumbnail_url);
 
       embeds.push(embed);
     });
