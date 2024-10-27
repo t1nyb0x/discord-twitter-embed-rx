@@ -42,11 +42,11 @@ client.on("messageCreate", async (m: Message) => {
   const matchRes = m.content.match(/https:\/\/(x|twitter)\.com\/[A-Za-z_0-9]+\/status\/[0-9]+/g);
   if (matchRes) {
     // /x or /twitterを/api.vxtwitterに置き換え
-    const vxurl = matchRes.map((t: string) => t.replace(/\/(x|twitter)/, "/api.vxtwitter"));
+    const vxUrl = matchRes.map((t: string) => t.replace(/\/(x|twitter)/, "/api.vxtwitter"));
 
-    vxurl.map(async (url: string) => {
-      const vxtwitterapi = new VxTwitterApi();
-      const postInfo = await vxtwitterapi.getPostInformation(url);
+    vxUrl.forEach(async (url: string) => {
+      const vxTwitterApi = new VxTwitterApi();
+      const postInfo = await vxTwitterApi.getPostInformation(url);
 
       // 元URLの埋め込みを削除する
       await m.suppressEmbeds(true);
