@@ -1,5 +1,5 @@
 services:
-  vxTwitterEmbed:
+  vxtwitterembed:
     container_name: vxTwitterEmbed
     build: .
     restart: always
