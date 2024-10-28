@@ -7,6 +7,7 @@ export interface VxTwitter {
   likes: number;
   mediaURLs: string[];
   media_extended: MediaExtended[];
+  qrt: VxTwitter | null;
   possibly_sensitive: boolean;
   qrtURL: string | null;
   replies: number;
