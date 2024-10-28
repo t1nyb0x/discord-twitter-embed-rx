@@ -3,7 +3,7 @@ import { VxTwitter } from "./vxtwitter/vxtwitter";
 
 export class PostEmbed {
   createEmbed(postInfo: VxTwitter): EmbedBuilder[] {
-    const qrtText = postInfo.qrt ? "\nQT: " + postInfo.qrt.text : null;
+    const qrtText = postInfo.qrt ? "\nQT: @" + postInfo.qrt.user_screen_name + " " + postInfo.qrt.text : null;
     const qrtURL = postInfo.qrtURL ? postInfo.qrtURL : null;
 
     if (!postInfo.mediaURLs.length) {
@@ -15,7 +15,7 @@ export class PostEmbed {
         })
         .setTitle(postInfo.user_name + "(@" + postInfo.user_screen_name + ")")
         .setURL(postInfo.tweetURL)
-        .setDescription(postInfo.text + qrtText + "(" + qrtURL + ")")
+        .setDescription(postInfo.text + qrtText + "\n(" + qrtURL + ")")
         .setColor(9016025)
         .addFields(
           {
@@ -47,7 +47,7 @@ export class PostEmbed {
           })
           .setTitle(postInfo.user_name + "(@" + postInfo.user_screen_name + ")")
           .setURL(postInfo.tweetURL)
-          .setDescription(postInfo.text + qrtText + "(" + qrtURL + ")")
+          .setDescription(postInfo.text + qrtText + "\n(" + qrtURL + ")")
           .setColor(9016025)
           .addFields(
             {
