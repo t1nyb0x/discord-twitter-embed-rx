@@ -1,4 +1,4 @@
-import { EmbedBuilder } from "discord.js";
+import { EmbedBuilder } from "@discordjs/builders";
 import { VxTwitter } from "./vxtwitter/vxtwitter";
 
 export class PostEmbed {
@@ -6,14 +6,31 @@ export class PostEmbed {
     if (!postInfo.mediaURLs.length) {
       const embed = new EmbedBuilder()
         .setAuthor({
-          name: postInfo.user_name,
+          name: postInfo.user_name + "(@" + postInfo.user_screen_name + ")",
           url: "https://x.com/" + postInfo.user_screen_name,
           iconURL: postInfo.user_profile_image_url,
         })
-        .setTitle(postInfo.user_name)
+        .setTitle(postInfo.user_name + "(@" + postInfo.user_screen_name + ")")
         .setURL(postInfo.tweetURL)
         .setDescription(postInfo.text)
         .setColor(9016025)
+        .addFields(
+          {
+            inline: true,
+            name: ":arrow_right_hook: replies",
+            value: String(postInfo.replies),
+          },
+          {
+            inline: true,
+            name: ":hearts: likes",
+            value: String(postInfo.likes),
+          },
+          {
+            inline: true,
+            name: ":arrows_counterclockwise: retweets",
+            value: String(postInfo.retweets),
+          }
+        )
         .setTimestamp(new Date(postInfo.date));
 
       return [embed];
@@ -21,14 +38,31 @@ export class PostEmbed {
       const embeds = postInfo.mediaURLs.map((mediaURL, index) => {
         const embed = new EmbedBuilder()
           .setAuthor({
-            name: postInfo.user_name,
+            name: postInfo.user_name + "(@" + postInfo.user_screen_name + ")",
             url: "https://x.com/" + postInfo.user_screen_name,
             iconURL: postInfo.user_profile_image_url,
           })
-          .setTitle(postInfo.user_name)
+          .setTitle(postInfo.user_name + "(@" + postInfo.user_screen_name + ")")
           .setURL(postInfo.tweetURL)
           .setDescription(postInfo.text)
           .setColor(9016025)
+          .addFields(
+            {
+              inline: true,
+              name: ":arrow_right_hook: replies",
+              value: String(postInfo.replies),
+            },
+            {
+              inline: true,
+              name: ":hearts: likes",
+              value: String(postInfo.likes),
+            },
+            {
+              inline: true,
+              name: ":arrows_counterclockwise: retweets",
+              value: String(postInfo.retweets),
+            }
+          )
           .setTimestamp(new Date(postInfo.date))
           .setImage(!/\.mp4$/.test(mediaURL) ? mediaURL : postInfo.media_extended[index].thumbnail_url);
 
