@@ -3,7 +3,7 @@ import { VxTwitter } from "./vxtwitter/vxtwitter";
 
 export class PostEmbed {
   createEmbed(postInfo: VxTwitter): EmbedBuilder[] {
-    const qrtText = postInfo.qrt ? "\nQT: @" + postInfo.qrt.user_screen_name + " " + postInfo.qrt.text : "";
+    const qrtText = postInfo.qrt ? "\n\nQT: @" + postInfo.qrt.user_screen_name + " " + postInfo.qrt.text : "";
     const qrtURL = postInfo.qrtURL ? "\n(" + postInfo.qrtURL + ")" : "";
 
     if (!postInfo.mediaURLs.length) {
