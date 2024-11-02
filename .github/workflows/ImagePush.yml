@@ -7,7 +7,7 @@ on:
         types: [published]
 
 env:
-    DOCKER_BASE_NAME: docker.pkg.github.com/${{ github.repository }}/discord-twitter-embed-rx
+    DOCKER_BASE_NAME: ghcr.io/${{ github.repository }}
 
 jobs:
     hadolint:
@@ -24,6 +24,9 @@ jobs:
     push-image:
         runs-on: ubuntu-latest
         needs: hadolint
+        permissions:
+            packages: write
+            contents: read
         steps:
             - uses: actions/checkout@v4
 
@@ -39,12 +42,14 @@ jobs:
             - name: Build Image
               run: |
                 docker build . -t "${PKG_TAG}"
-        
-            - name: Login to Registries
-              env:
-                GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+            - name: Login to ghcr.io
+              uses: docker/login-action@v3
+              with:
+                registry: ghcr.io
+                username: ${{ github.actor }}
+                password: ${{ secrets.GITHUB_TOKEN }}
+              
+            - name: Push Image
               run: |
-                echo "${GITHUB_TOKEN}" | docker login docker.pkg.github.com -u  t1nyb0x --password-stdin
-        
-            - name: Push to GitHub Packages
-              run: docker push ${PKG_TAG}
+               docker push "${PKG_TAG}"
