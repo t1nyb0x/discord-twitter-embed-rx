@@ -5,8 +5,6 @@ on:
             - main
     release:
         types: [published]
-    pull_request:
-        types: [opened, synchronize]
 
 env:
     DOCKER_BASE_NAME: docker.pkg.github.com/t1nyb0x/discord-twitter-embed-rx
@@ -49,5 +47,4 @@ jobs:
                 echo "${GITHUB_TOKEN}" | docker login docker.pkg.github.com -u  t1nyb0x --password-stdin
         
             - name: Push to GitHub Packages
-              if: github.event_name != 'pull_request'
               run: docker push ${PKG_TAG}
