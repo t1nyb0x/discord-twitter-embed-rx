@@ -7,7 +7,7 @@ on:
         types: [published]
 
 env:
-    DOCKER_BASE_NAME: docker.pkg.github.com/t1nyb0x/discord-twitter-embed-rx
+    DOCKER_BASE_NAME: docker.pkg.github.com/${{ github.repository }}/discord-twitter-embed-rx
 
 jobs:
     hadolint:
