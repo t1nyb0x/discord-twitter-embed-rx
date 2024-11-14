@@ -29,7 +29,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/t1nyb0x/replyvxtwitter.git"
+    "url": "git+https://github.com/t1nyb0x/discord-twitter-embed-rx.git"
   },
   "keywords": [
     "discord",
@@ -38,9 +38,9 @@
   "author": "t1nyb0x",
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/t1nyb0x/replyvxtwitter/issues"
+    "url": "https://github.com/t1nyb0x/discord-twitter-embed-rx/issues"
   },
-  "homepage": "https://github.com/t1nyb0x/replyvxtwitter#readme",
+  "homepage": "https://github.com/t1nyb0x/discord-twitter-embed-rx#readme",
   "devDependencies": {
     "@eslint/compat": "^1.2.1",
     "@typescript-eslint/eslint-plugin": "^8.11.0",
