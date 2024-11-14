@@ -5,6 +5,7 @@
   "main": "index.js",
   "scripts": {
     "start": "node --env-file=.env ./dist/index.js",
+    "start:docker": "node ./dist/index.js",
     "debug": "node --env-file=.env -r ts-node/register ./src/index.ts",
     "compile": "tsc -p .",
     "compile:test": "tsc -p . --noEmit",
