@@ -2,13 +2,12 @@ import axios from "axios";
 import { VxTwitter } from "./vxtwitter";
 
 export class VxTwitterApi {
-  async getPostInformation(url: string): Promise<VxTwitter> {
-    let postInfo;
+  async getPostInformation(url: string): Promise<VxTwitter | undefined> {
     try {
-      postInfo = await axios.get(url);
+      return (await axios.get(url)).data;
     } catch (e) {
       console.error(e);
+      return undefined;
     }
-    return postInfo!.data;
   }
 }
