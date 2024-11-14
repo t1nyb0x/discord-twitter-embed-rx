@@ -18,6 +18,7 @@ jobs:
         with:
           key:  ${{ secrets.SSH_PRIVATE_KEY }}
           known_hosts: ${{ secrets.SSH_KNOWN_HOSTS }}
+          name: ed25519
 
       - name: Restart Application
         env:
@@ -27,7 +28,7 @@ jobs:
           ENV: ${{ secrets.ENVIRONMENT }}
           TOKEN: ${{ secrets.PRODUCTION_TOKEN }}
         run: |
-          ssh $SSH_USER@$VPS_HOST -p $SSH_PORT \
+          ssh -i ~/.ssh/ed25519 $SSH_USER@$VPS_HOST -p $SSH_PORT \
           'export ENVIRONMENT=$ENV && export PRODUCTION_TOKEN=$TOKEN && \
            docker pull ghcr.io/t1nyb0x/discord-twitter-embed-rx:latest && \
-           docker run --env ENVIRONMENT --env PRODUCTION_TOKEN ghcr.io/t1nyb0x/discord-twitter-embed-rx:latest'
+           docker run -d --env ENVIRONMENT --env PRODUCTION_TOKEN ghcr.io/t1nyb0x/discord-twitter-embed-rx:latest'
