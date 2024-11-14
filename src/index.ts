@@ -1,10 +1,14 @@
 import { Client, Message, GatewayIntentBits, ChannelType } from "discord.js";
 import { PostEmbed } from "./postEmbed";
-import { VxTwitterApi } from "./vxtwitter/api";
+import { getTweetData } from "./shared/wrapper";
 
 const ENV = process.env.ENVIRONMENT;
 
 let token: string | undefined;
+
+const postEmbed = new PostEmbed();
+
+const TWITTER_URL_REGEX = /https:\/\/(x|twitter)\.com\/[A-Za-z_0-9]+\/status\/[0-9]+/g;
 
 switch (ENV) {
   case "production":
@@ -39,24 +43,19 @@ client.on("messageCreate", async (m: Message) => {
   if ((client.user !== null && m.author.id === client.user.id) || m.author.bot) return;
 
   // https://twitter.com(or x.com)/hogehoge/{postID}かチェック
-  const matchRes = m.content.match(/https:\/\/(x|twitter)\.com\/[A-Za-z_0-9]+\/status\/[0-9]+/g);
+  const matchRes = m.content.match(TWITTER_URL_REGEX);
   if (matchRes) {
-    // /x or /twitterを/api.vxtwitterに置き換え
-    const vxUrl = matchRes.map((t: string) => t.replace(/\/(x|twitter)/, "/api.vxtwitter"));
+    for (const i in matchRes) {
+      const tweetData = await getTweetData(matchRes[i]);
+      if (tweetData == undefined) {
+        await m.reply("ツイートの取得に失敗しました。");
+        return;
+      }
 
-    vxUrl.forEach(async (url: string) => {
-      const vxTwitterApi = new VxTwitterApi();
-      const postInfo = await vxTwitterApi.getPostInformation(url);
-
-      // 元URLの埋め込みを削除する
-      await m.suppressEmbeds(true);
-
-      const postEmbed = new PostEmbed();
-
-      const embedPostInfo = postEmbed.createEmbed(postInfo);
+      const embedPostInfo = postEmbed.createEmbed(tweetData);
       if (m.channel.type === ChannelType.GuildText) {
         await m.channel.send({ embeds: embedPostInfo });
       }
-    });
+    }
   }
 });

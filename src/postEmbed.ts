@@ -1,77 +1,56 @@
 import { EmbedBuilder } from "@discordjs/builders";
-import { VxTwitter } from "./vxtwitter/vxtwitter";
+import { APIEmbedField } from "discord.js";
+import { TweetData } from "shared/tweetdata";
+
+function createField(_name: string, count: number): APIEmbedField {
+  return {
+    inline: true,
+    name: _name,
+    value: String(count),
+  };
+}
 
 export class PostEmbed {
-  createEmbed(postInfo: VxTwitter): EmbedBuilder[] {
-    const qrtText = postInfo.qrt ? "\n\nQT: @" + postInfo.qrt.user_screen_name + " " + postInfo.qrt.text : "";
-    const qrtURL = postInfo.qrtURL ? "\n(" + postInfo.qrtURL + ")" : "";
-
-    if (!postInfo.mediaURLs.length) {
-      const embed = new EmbedBuilder()
-        .setAuthor({
-          name: postInfo.user_name + "(@" + postInfo.user_screen_name + ")",
-          url: "https://x.com/" + postInfo.user_screen_name,
-          iconURL: postInfo.user_profile_image_url,
-        })
-        .setTitle(postInfo.user_name + "(@" + postInfo.user_screen_name + ")")
-        .setURL(postInfo.tweetURL)
-        .setDescription(postInfo.text + qrtText + qrtURL)
-        .setColor(9016025)
-        .addFields(
-          {
-            inline: true,
-            name: ":arrow_right_hook: replies",
-            value: String(postInfo.replies),
-          },
-          {
-            inline: true,
-            name: ":hearts: likes",
-            value: String(postInfo.likes),
-          },
-          {
-            inline: true,
-            name: ":arrows_counterclockwise: retweets",
-            value: String(postInfo.retweets),
-          }
-        )
-        .setTimestamp(new Date(postInfo.date));
-
-      return [embed];
-    } else {
-      const embeds = postInfo.mediaURLs.map((mediaURL, index) => {
-        const embed = new EmbedBuilder()
-          .setAuthor({
-            name: postInfo.user_name + "(@" + postInfo.user_screen_name + ")",
-            url: "https://x.com/" + postInfo.user_screen_name,
-            iconURL: postInfo.user_profile_image_url,
-          })
-          .setTitle(postInfo.user_name + "(@" + postInfo.user_screen_name + ")")
-          .setURL(postInfo.tweetURL)
-          .setDescription(postInfo.text + qrtText + qrtURL)
-          .setColor(9016025)
-          .addFields(
-            {
-              inline: true,
-              name: ":arrow_right_hook: replies",
-              value: String(postInfo.replies),
-            },
-            {
-              inline: true,
-              name: ":hearts: likes",
-              value: String(postInfo.likes),
-            },
-            {
-              inline: true,
-              name: ":arrows_counterclockwise: retweets",
-              value: String(postInfo.retweets),
-            }
-          )
-          .setTimestamp(new Date(postInfo.date))
-          .setImage(!/\.mp4$/.test(mediaURL) ? mediaURL : postInfo.media_extended[index].thumbnail_url);
-
-        return embed;
-      });
-      return embeds;
+  br = "\n";
+  embedColor = 9016025;
+  quotePrefix = "QT: ";
+  createSingleEmbed(post: TweetData): EmbedBuilder {
+    const embed = new EmbedBuilder()
+      .setAuthor({
+        name: post.author.name,
+        url: post.author.url,
+        iconURL: post.author.iconUrl,
+      })
+      .setTitle(post.author.name)
+      .setURL(post.tweetUrl)
+      .setColor(this.embedColor)
+      .addFields(
+        createField(":arrow_right_hook: replies", post.replies),
+        createField(":hearts: likes", post.likes),
+        createField(":arrows_counterclockwise: retweets", post.retweets)
+      )
+      .setTimestamp(post.timestamp);
+    let description = post.text;
+    if (post.quoteData != undefined) {
+      const quoteText = this.quotePrefix + "@" + post.quoteData.author.id + " " + post.quoteData.text;
+      const quoteUrl = "(" + post.quoteData.tweetUrl + ")";
+      description += this.br + this.br + quoteText + this.br + quoteUrl;
     }
+
+    // If description is not empty
+    if (description != "") {
+      embed.setDescription(description);
+    }
+
+    return embed;
+  }
+  createEmbed(post: TweetData): EmbedBuilder[] {
+    if (post.mediaUrls == undefined || post.mediaUrls.length == 0) {
+      return [this.createSingleEmbed(post)];
+    }
+
+    return post.mediaUrls.map((url) => {
+      return this.createSingleEmbed(post).setImage(url);
+    });
   }
 }
