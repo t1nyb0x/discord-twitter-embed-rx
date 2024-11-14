@@ -1,5 +1,6 @@
 name: deploy
 on:
+  workflow_dispatch:
   workflow_run:
     workflows: [release]
     branches: [main]
@@ -32,5 +33,5 @@ jobs:
         run: |
           ssh -o StrictHostKeyChecking=no -i ~/.ssh/deploy_key $SSH_USER@$VPS_HOST -p $SSH_PORT \
           'export ENVIRONMENT=$ENV && export PRODUCTION_TOKEN=$TOKEN \
-           docker pull ghcr.io/t1nyb0x/discord-twitter-embed-rx && \
-           docker run --env ENVIRONMENT --env PRODUCTION_TOKEN ghcr.io/t1nyb0x/discord-twitter-embed-rx'
+           docker pull ghcr.io/t1nyb0x/discord-twitter-embed-rx:latest && \
+           docker run --env ENVIRONMENT --env PRODUCTION_TOKEN ghcr.io/t1nyb0x/discord-twitter-embed-rx:latest'
