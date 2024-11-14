@@ -31,6 +31,6 @@ jobs:
           TOKEN: ${{ secrets.PRODUCTION_TOKEN }}
         run: |
           ssh -o StrictHostKeyChecking=no -i ~/.ssh/deploy_key $SSH_USER@$VPS_HOST -p $SSH_PORT \
-          'export ENVIRONMENT=ENV && export PRODUCTION_TOKEN=TOKEN \
+          'export ENVIRONMENT=$ENV && export PRODUCTION_TOKEN=$TOKEN \
            docker pull ghcr.io/t1nyb0x/discord-twitter-embed-rx && \
            docker run --env ENVIRONMENT --env PRODUCTION_TOKEN ghcr.io/t1nyb0x/discord-twitter-embed-rx'
