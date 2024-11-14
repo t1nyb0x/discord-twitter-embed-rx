@@ -8,4 +8,4 @@ COPY ["./src", "./src"]
 
 RUN npm i
 
-CMD ["npm", "start"]
+CMD ["npm", "run", "start:docker"]
