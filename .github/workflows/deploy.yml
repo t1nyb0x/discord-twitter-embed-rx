@@ -33,4 +33,4 @@ jobs:
         run: |
           ssh -o StrictHostKeyChecking=no -i ~/.ssh/deploy_key $SSH_USER@$VPS_HOST -p $SSH_PORT \
           'docker pull ghcr.io/t1nyb0x/discord-twitter-embed-rx:latest && \
-           docker run -d --env $ENV --env $TOKEN ghcr.io/t1nyb0x/discord-twitter-embed-rx:latest'
+           docker run -d --env NODE_ENV=$ENV --env PRODUCTION_TOKEN=$TOKEN ghcr.io/t1nyb0x/discord-twitter-embed-rx:latest'
