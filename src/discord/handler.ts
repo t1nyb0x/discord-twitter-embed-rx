@@ -17,6 +17,8 @@ export async function onMessageCreate(client: Client<boolean>, m: Message) {
         await m.reply("ツイートの取得に失敗しました。");
         return;
       }
+      // 投稿されたポストの埋め込みを削除する
+      await m.suppressEmbeds(true);
 
       const embedPostInfo = postEmbed.createEmbed(tweetData);
       if (m.channel.type === ChannelType.GuildText) {
