@@ -1,26 +1,44 @@
-import { Client, Message, GatewayIntentBits, ChannelType } from "discord.js";
-import { PostEmbed } from "./postEmbed";
-import { getTweetData } from "./shared/wrapper";
+import { Client, GatewayIntentBits, Message } from "discord.js";
+import { onMessageCreate } from "./discord/handler";
 
-const ENV = process.env.ENVIRONMENT;
+enum ApplicationMode {
+  Production = "production",
+  Development = "development",
+}
 
-let token: string | undefined;
+const ENV = process.env.NODE_ENV;
 
-const postEmbed = new PostEmbed();
-
-const TWITTER_URL_REGEX = /https:\/\/(x|twitter)\.com\/[A-Za-z_0-9]+\/status\/[0-9]+/g;
-
+// === Application Mode === // Todo export to other file
+let appMode: ApplicationMode = ApplicationMode.Production;
 switch (ENV) {
   case "production":
-    token = process.env.PRODUCTION_TOKEN;
+    appMode = ApplicationMode.Production;
     break;
   case "develop":
+    appMode = ApplicationMode.Development;
+    break;
+}
+console.log(`Mode: ${appMode}`);
+
+// === Load bot token from environ variable ===
+let token: string | undefined;
+switch (appMode) {
+  case ApplicationMode.Production:
+    token = process.env.PRODUCTION_TOKEN;
+    break;
+  case ApplicationMode.Development:
     token = process.env.DEVELOP_TOKEN;
     break;
 }
 
-if (token === undefined) throw new Error("Failed load discord token.");
+// === Check token was successfully to load ===
+if (token === undefined) {
+  throw new Error(`Failed load discord token. Mode: ${appMode}`);
+} else {
+  console.log("Successfully to load discord bot token.");
+}
 
+// === Create discord bot client ===
 const client = new Client({
   intents: [
     GatewayIntentBits.Guilds,
@@ -30,8 +48,8 @@ const client = new Client({
   ],
 });
 
-client.login(token);
-
+// === Event handlers ===
+// On ready
 client.on("ready", async () => {
   if (client.user === null) {
     throw new Error("Failed load client");
@@ -39,23 +57,8 @@ client.on("ready", async () => {
   console.log(`Logged in as ${client.user.tag}`);
 });
 
-client.on("messageCreate", async (m: Message) => {
-  if ((client.user !== null && m.author.id === client.user.id) || m.author.bot) return;
+// On Message Create
+client.on("messageCreate", (m: Message) => onMessageCreate(client, m));
 
-  // https://twitter.com(or x.com)/hogehoge/{postID}かチェック
-  const matchRes = m.content.match(TWITTER_URL_REGEX);
-  if (matchRes) {
-    for (const i in matchRes) {
-      const tweetData = await getTweetData(matchRes[i]);
-      if (tweetData == undefined) {
-        await m.reply("ツイートの取得に失敗しました。");
-        return;
-      }
-
-      const embedPostInfo = postEmbed.createEmbed(tweetData);
-      if (m.channel.type === ChannelType.GuildText) {
-        await m.channel.send({ embeds: embedPostInfo });
-      }
-    }
-  }
-});
+// === Login ===
+client.login(token);
