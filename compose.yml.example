@@ -1,5 +1,7 @@
 services:
-  vxtwitterembed:
-    container_name: vxTwitterEmbed
-    build: .
+  twitter-rx:
+    container_name: TwitterEmbedRX
+    image: ghcr.io/t1nyb0x/discord-twitter-embed-rx:latest
     restart: always
+    env_file:
+      - .env
