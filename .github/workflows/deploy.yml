@@ -28,9 +28,7 @@ jobs:
           SSH_USER: ${{ secrets.SSH_USER }}
           VPS_HOST: ${{ secrets.VPS_HOST }}
           SSH_PORT: ${{ secrets.SSH_PORT }}
-          ENV: ${{ secrets.ENVIRONMENT }}
-          TOKEN: ${{ secrets.PRODUCTION_TOKEN }}
         run: |
           ssh -o StrictHostKeyChecking=no -i ~/.ssh/deploy_key $SSH_USER@$VPS_HOST -p $SSH_PORT \
           'docker pull ghcr.io/t1nyb0x/discord-twitter-embed-rx:latest && \
-           docker run -d --env NODE_ENV=$ENV --env PRODUCTION_TOKEN=$TOKEN ghcr.io/t1nyb0x/discord-twitter-embed-rx:latest'
+           docker run -d --env NODE_ENV=${{ secrets.ENVIRONMENT }} --env PRODUCTION_TOKEN=${{ secrets.PRODUCTION_TOKEN }} ghcr.io/t1nyb0x/discord-twitter-embed-rx:latest'
