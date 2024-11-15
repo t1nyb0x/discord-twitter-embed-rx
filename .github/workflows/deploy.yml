@@ -30,5 +30,4 @@ jobs:
           SSH_PORT: ${{ secrets.SSH_PORT }}
         run: |
           ssh -o StrictHostKeyChecking=no -i ~/.ssh/deploy_key $SSH_USER@$VPS_HOST -p $SSH_PORT \
-          'docker pull ghcr.io/t1nyb0x/discord-twitter-embed-rx:latest && \
-           docker run -d --env NODE_ENV=${{ secrets.ENVIRONMENT }} --env PRODUCTION_TOKEN=${{ secrets.PRODUCTION_TOKEN }} ghcr.io/t1nyb0x/discord-twitter-embed-rx:latest'
+          'cd TwitterRX && docker compose down && docker compose up -d'
