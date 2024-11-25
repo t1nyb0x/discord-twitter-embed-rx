@@ -2,6 +2,12 @@ import { Tweet } from "fxtwitter/fxtwitter";
 import { VxTwitter } from "vxtwitter/vxtwitter";
 import { TweetData } from "./tweetdata";
 
+/**
+ * vxTwitterからの返却データをTweetDataに変換する
+ * @param data vxTwitterのレスポンスデータ
+ * @param depth
+ * @returns
+ */
 export function VxToTweetData(data: VxTwitter, depth: number = 0): TweetData {
   return {
     author: {
@@ -23,6 +29,12 @@ export function VxToTweetData(data: VxTwitter, depth: number = 0): TweetData {
   };
 }
 
+/**
+ * fxTwitterからの返却データをTweetDataに変換する
+ * @param data fxTwitterから返却されたデータ
+ * @param depth
+ * @returns
+ */
 export function FXToTweetData(data: Tweet, depth: number = 0): TweetData {
   return {
     author: {
