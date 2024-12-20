@@ -10,6 +10,7 @@ export interface TweetData {
   timestamp: Date;
   hasMedia: boolean;
   mediaUrls: string[] | undefined;
+  mediaUrlsThumbnail: string[] | undefined;
 }
 
 export interface TweetAuthor {

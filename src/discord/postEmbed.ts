@@ -14,6 +14,12 @@ export class PostEmbed {
   br = "\n";
   embedColor = 9016025;
   quotePrefix = "QT: ";
+
+  /**
+   * Discord埋め込みデータを作成する
+   * @param post TweetData
+   * @returns
+   */
   createSingleEmbed(post: TweetData): EmbedBuilder {
     const embed = new EmbedBuilder()
       .setAuthor({
@@ -44,12 +50,18 @@ export class PostEmbed {
 
     return embed;
   }
+
+  /**
+   * Discordで表示する埋め込みデータを作成する
+   * @param post
+   * @returns
+   */
   createEmbed(post: TweetData): EmbedBuilder[] {
-    if (post.mediaUrls == undefined || post.mediaUrls.length == 0) {
+    if (post.mediaUrlsThumbnail == undefined || post.mediaUrlsThumbnail.length == 0) {
       return [this.createSingleEmbed(post)];
     }
 
-    return post.mediaUrls.map((url) => {
+    return post.mediaUrlsThumbnail.map((url) => {
       return this.createSingleEmbed(post).setImage(url);
     });
   }
