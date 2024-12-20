@@ -57,11 +57,11 @@ export class PostEmbed {
    * @returns
    */
   createEmbed(post: TweetData): EmbedBuilder[] {
-    if (post.mediaUrls == undefined || post.mediaUrls.length == 0) {
+    if (post.mediaUrlsThumbnail == undefined || post.mediaUrlsThumbnail.length == 0) {
       return [this.createSingleEmbed(post)];
     }
 
-    return post.mediaUrls.map((url) => {
+    return post.mediaUrlsThumbnail.map((url) => {
       return this.createSingleEmbed(post).setImage(url);
     });
   }

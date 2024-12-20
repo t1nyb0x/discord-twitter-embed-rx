@@ -41,6 +41,7 @@ export interface Media {
 
 export interface Photo {
   type: string;
+  thumbnail_url: string;
   url: string;
   width: number;
   height: number;
