@@ -18,6 +18,11 @@ function replaceFx(url: string): string {
   return url.replace(REGEX, "/api.fxtwitter");
 }
 
+/**
+ * XポストURLをvxTwitter, fxTwitterのAPIに置き換え、取得データをTweetDataに変換する
+ * @param url XのURL
+ * @returns
+ */
 export async function getTweetData(url: string): Promise<TweetData | undefined> {
   // Request Priority
   // 1. vxTwitter
