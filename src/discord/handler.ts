@@ -9,19 +9,15 @@ import { PostEmbed } from "./postEmbed";
 const TWITTER_URL_REGEX = /https:\/\/(x|twitter)\.com\/[A-Za-z_0-9]+\/status\/[0-9]+/g;
 const postEmbed = new PostEmbed();
 const tmpDir = "./tmp";
-const uniqueArr = <T>(arr: T[]): T[] => [...new Set(arr)];
 
 export async function onMessageCreate(client: Client<boolean>, m: Message) {
   if ((client.user !== null && m.author.id === client.user.id) || m.author.bot) return;
 
   // https://twitter.com(or x.com)/hogehoge/{postID}かチェック
   const matchRes = m.content.match(TWITTER_URL_REGEX);
-
   if (matchRes) {
-    // 配列内部の重複を除去する
-    const postURLs = uniqueArr(matchRes);
-    for (const i in postURLs) {
-      const tweetData = await getTweetData(postURLs[i]);
+    for (const i in matchRes) {
+      const tweetData = await getTweetData(matchRes[i]);
       if (tweetData == undefined) {
         await m.reply("ツイートの取得に失敗しました。");
         return;
