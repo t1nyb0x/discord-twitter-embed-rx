@@ -1,3 +1,4 @@
+import { randomUUID } from "node:crypto";
 import fs from "node:fs/promises";
 import path from "node:path";
 import { Message, Client, ChannelType, AttachmentBuilder } from "discord.js";
@@ -25,18 +26,31 @@ export async function onMessageCreate(client: Client<boolean>, m: Message) {
       await m.suppressEmbeds(true);
 
       // 一時ディレクトリ作成
-      await fs.mkdir(tmpDir);
+      const uniqueTmpDir = path.join(tmpDir, randomUUID());
 
-      await downloadMedia(tweetData.mediaUrls);
-
-      // ディレクトリからファイルを取り出し、AttachBuilderへ渡す
       try {
-        const files = await fs.readdir(tmpDir);
+        await fs.mkdir(uniqueTmpDir, { recursive: true });
 
-        // mp4ファイルがない場合はスキップする
+        await Promise.all(
+          (tweetData.mediaUrls ?? []).map((url, index) => {
+            if (/\.mp4$/.test(url)) {
+              try {
+                console.log("start download...");
+                return downloadVideo(url, uniqueTmpDir + `/output${index + 1}.mp4`).then(() => {
+                  console.log("download completed!");
+                });
+              } catch (error) {
+                console.error(`Error!: ${error}`);
+              }
+            }
+          })
+        );
+        // ディレクトリからファイルを取得
+        const files = await fs.readdir(uniqueTmpDir);
+        // mp4ファイルがある場合は送信
         if (files.length !== 0) {
           const attachments = files.map((file) => {
-            const filePath = path.join(tmpDir, file);
+            const filePath = path.join(uniqueTmpDir, file);
             return new AttachmentBuilder(filePath, { name: "mediaFile.mp4" });
           });
           if (m.channel.type === ChannelType.GuildText) {
@@ -51,6 +65,10 @@ export async function onMessageCreate(client: Client<boolean>, m: Message) {
           await m.channel.send("ファイルの送信に失敗しました");
           await m.channel.send(`${e}`);
         }
+      } finally {
+        // 処理が終わったらリクエストごとの一時ディレクトリを削除
+        await fs.rm(uniqueTmpDir, { recursive: true });
+        console.log(`Temporary directory removed: ${uniqueTmpDir}`);
       }
 
       // 埋め込みデータ生成
@@ -59,31 +77,6 @@ export async function onMessageCreate(client: Client<boolean>, m: Message) {
       if (m.channel.type === ChannelType.GuildText) {
         await m.channel.send({ embeds: embedPostInfo });
       }
-      // 一時ディレクトリ削除
-      await fs.rm(tmpDir, { recursive: true });
     }
   }
-}
-
-/**
- * メディアデータをURLからダウンロードする
- * @param mediaUrls string | undefined
- * @returns void
- */
-async function downloadMedia(mediaUrls?: string[]): Promise<void> {
-  let cnt = 1;
-  // mp4がある場合はダウンロードする
-  for (const url of mediaUrls ?? []) {
-    if (/\.mp4$/.test(url)) {
-      try {
-        console.log("start download...");
-        await downloadVideo(url, tmpDir + `/output${cnt}.mp4`);
-        console.log("download completed!");
-      } catch (error) {
-        console.error(`Error!: ${error}`);
-      }
-      cnt++;
-    }
-  }
-  return;
 }
