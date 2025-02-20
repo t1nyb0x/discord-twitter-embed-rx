@@ -22,7 +22,7 @@ export async function onMessageCreate(client: Client<boolean>, m: Message) {
   // 配列内部の重複を除去する
   const postURLs = uniqueArr(matchRes);
 
-  if (postURLs.length === 0) return;
+  if (!postURLs.length) return;
 
   for (const postURL of postURLs) {
     const tweetData = await getTweetData(postURL);
@@ -39,19 +39,16 @@ export async function onMessageCreate(client: Client<boolean>, m: Message) {
     try {
       await fs.mkdir(uniqueTmpDir, { recursive: true });
 
-      try {
-        await Promise.all(
-          (tweetData.mediaUrls ?? [])
-            .filter((url) => /\.mp4$/.test(url))
-            .map(async (url, index) => {
-              console.log("start download...");
-              await downloadVideo(url, path.join(uniqueTmpDir, `/output${index + 1}.mp4`));
-              console.log("download completed!");
-            })
-        );
-      } catch (error) {
-        console.error(`Error!: ${error}`);
-      }
+      await Promise.all(
+        (tweetData.mediaUrls ?? [])
+          .filter((url) => /\.mp4$/.test(url))
+          .map((url, index) => {
+            console.log("start download...");
+            downloadVideo(url, path.join(uniqueTmpDir, `/output${index + 1}.mp4`))
+              .then(() => console.log(`download completed: output${index + 1}.mp4`))
+              .catch((error) => console.error(`Download error: ${error}`));
+          })
+      );
       // ディレクトリからファイルを取得
       const files = await fs.readdir(uniqueTmpDir);
       // mp4ファイルがある場合は送信
