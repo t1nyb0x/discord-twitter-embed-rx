@@ -39,6 +39,7 @@ export async function onMessageCreate(client: Client<boolean>, m: Message) {
     try {
       await fs.mkdir(uniqueTmpDir, { recursive: true });
 
+      // 動画ポストをダウンロード
       await Promise.all(
         (tweetData.mediaUrls ?? [])
           .filter((url) => /\.mp4$/.test(url))
