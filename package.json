@@ -1,12 +1,12 @@
 {
   "name": "DiscordTwitterEmbedRX",
-  "version": "1.6.0",
+  "version": "1.7.0",
   "description": "",
   "main": "index.js",
   "scripts": {
     "start": "node --env-file=.env ./dist/index.js",
     "start:docker": "node ./dist/index.js",
-    "debug": "node --env-file=.env -r ts-node/register ./src/index.ts",
+    "debug": "tsx watch --env-file=.env src/index.ts",
     "compile": "tsc -p .",
     "compile:test": "tsc -p . --noEmit",
     "test": "echo \"Error: no test specified\" && exit 1",
@@ -57,6 +57,7 @@
     "@discordjs/builders": "^1.9.0",
     "axios": "^1.7.7",
     "discord.js": "^14.16.3",
-    "ts-node": "^10.9.2"
+    "ts-node": "^10.9.2",
+    "tsx": "^4.19.3"
   }
 }
