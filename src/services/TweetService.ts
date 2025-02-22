@@ -13,6 +13,12 @@ const tmpDir = "tmp";
 const uniqueArr = <T>(arr: T[]): T[] => [...new Set(arr)];
 
 export class TweetService {
+  /**
+   * ツイート（ポスト）URLを処理する
+   *
+   * @param m Message
+   * @returns Promise<void>
+   */
   async handleTweetURLs(m: Message) {
     // https://twitter.com(or x.com)/hogehoge/{postID}かチェック
     const matchRes = m.content.match(TWITTER_URL_REGEX);
@@ -28,6 +34,13 @@ export class TweetService {
     }
   }
 
+  /**
+   * ツイート（ポスト）の情報を埋め込みメッセージでDiscordに送信する
+   *
+   * @param m Message
+   * @param postURL string
+   * @returns Promise<void>
+   */
   private async sendEmbedMessage(m: Message, postURL: string) {
     const tweetData = await getTweetData(postURL);
     if (!tweetData) {
@@ -68,6 +81,14 @@ export class TweetService {
     await m.reply({ embeds: embedPostInfo });
   }
 
+  /**
+   * 動画データをダウンロードする
+   *
+   * @param m Message
+   * @param mediaUrls string[]
+   * @param uniqueTmpDir string
+   * @returns Promise<void>
+   */
   private async downloadMedia(m: Message, mediaUrls: string[], uniqueTmpDir: string) {
     // 動画ポストをダウンロード
     await Promise.all(
@@ -88,6 +109,14 @@ export class TweetService {
     }
   }
 
+  /**
+   * 動画データをアタッチメントで送信する
+   *
+   * @param m Message
+   * @param dir string
+   * @param files string[]
+   * @returns Promise<void>
+   */
   private async sendMediaAttachment(m: Message, dir: string, files: string[]) {
     // mp4ファイルがある場合は送信
     if (files.length) {
