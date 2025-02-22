@@ -1,5 +1,5 @@
 import { Client, GatewayIntentBits, Message } from "discord.js";
-import { onMessageCreate } from "./discord/handler";
+import { onMessageCreate } from "@/discord/handler";
 
 enum ApplicationMode {
   Production = "production",
