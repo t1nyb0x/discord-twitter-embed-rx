@@ -1,13 +1,13 @@
 {
   "name": "DiscordTwitterEmbedRX",
-  "version": "1.7.1",
+  "version": "1.7.2",
   "description": "",
   "main": "index.js",
   "scripts": {
     "start": "node --env-file=.env dist/index.js",
     "start:docker": "node ./dist/index.js",
     "debug": "tsx watch --env-file=.env src/index.ts",
-    "compile": "tsc -p .",
+    "compile": "tsc -p . && tsc-alias --resolve-full-paths",
     "compile:test": "tsc -p . --noEmit",
     "test": "echo \"Error: no test specified\" && exit 1",
     "lint": "eslint src/index.ts",
