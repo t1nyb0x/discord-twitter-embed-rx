@@ -44,7 +44,10 @@ export class TweetService {
   private async sendEmbedMessage(m: Message, postURL: string) {
     const tweetData = await getTweetData(postURL);
     if (!tweetData) {
-      await m.reply("ツイートの取得に失敗しました。");
+      await m.reply({
+        content: "ツイートの取得に失敗しました。",
+        allowedMentions: { repliedUser: false },
+      });
       return;
     }
 
@@ -78,7 +81,7 @@ export class TweetService {
     // 埋め込みデータ生成
     const embedPostInfo = postEmbed.createEmbed(tweetData);
 
-    await m.reply({ embeds: embedPostInfo });
+    await m.reply({ embeds: embedPostInfo, allowedMentions: { repliedUser: false } });
   }
 
   /**
