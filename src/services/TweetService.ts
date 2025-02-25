@@ -76,9 +76,14 @@ export class TweetService {
    * 埋め込みメッセージを作成する
    * @param m Message
    * @param tweetData TweetData vxTwitter, fxTwitterから受け取ったツイートデータ
+   * @param _isSpoiler boolean
    * @returns Promise<EmbedBuilder[]>
    */
-  private async createEmbedMessage(m: Message, tweetData: TweetData): Promise<EmbedBuilder[]> {
+  private async createEmbedMessage(
+    m: Message,
+    tweetData: TweetData,
+    _isSpoiler: boolean = false
+  ): Promise<EmbedBuilder[]> {
     // 投稿されたポストの埋め込みを削除する
     await m.suppressEmbeds(true);
 
@@ -88,7 +93,7 @@ export class TweetService {
       try {
         await fs.mkdir(uniqueTmpDir, { recursive: true });
         console.log(`Temporary directory created: ${uniqueTmpDir}`);
-        await this.downloadMedia(m, tweetData.mediaUrls, uniqueTmpDir);
+        await this.downloadMedia(m, tweetData.mediaUrls, uniqueTmpDir, _isSpoiler);
       } catch (e) {
         console.error(`Error sending file: ${e}`);
         if (m.channel.type === ChannelType.GuildText) {
@@ -130,7 +135,7 @@ export class TweetService {
    * @param client Client<boolean>
    */
   private async sendSpoilerEmbedMessage(m: Message, tweetData: TweetData, client: Client<boolean>) {
-    const embedPostInfo = await this.createEmbedMessage(m, tweetData);
+    const embedPostInfo = await this.createEmbedMessage(m, tweetData, true);
 
     const button = new ButtonBuilder()
       .setCustomId(`reveal_spoiler_${m.id}`)
@@ -166,9 +171,10 @@ export class TweetService {
    * @param m Message
    * @param mediaUrls string[]
    * @param uniqueTmpDir string
+   * @param _isSpoiler boolean
    * @returns Promise<void>
    */
-  private async downloadMedia(m: Message, mediaUrls: string[], uniqueTmpDir: string) {
+  private async downloadMedia(m: Message, mediaUrls: string[], uniqueTmpDir: string, _isSpoiler = false) {
     // 動画ポストをダウンロード
     await Promise.all(
       mediaUrls
@@ -184,7 +190,7 @@ export class TweetService {
     const files = await fs.readdir(uniqueTmpDir);
     // mp4ファイルがある場合は送信
     if (files.length) {
-      await this.sendMediaAttachment(m, uniqueTmpDir, files);
+      await this.sendMediaAttachment(m, uniqueTmpDir, files, _isSpoiler);
     }
   }
 
@@ -194,14 +200,19 @@ export class TweetService {
    * @param m Message
    * @param dir string
    * @param files string[]
+   * @param _isSpoiler boolean
    * @returns Promise<void>
    */
-  private async sendMediaAttachment(m: Message, dir: string, files: string[]) {
+  private async sendMediaAttachment(m: Message, dir: string, files: string[], _isSpoiler = false) {
     // mp4ファイルがある場合は送信
     if (files.length) {
       const attachments = files.map((file) => {
         const filePath = path.join(dir, file);
-        return new AttachmentBuilder(filePath, { name: "mediaFile.mp4" });
+        if (_isSpoiler) {
+          return new AttachmentBuilder(filePath, { name: "SPOILER_mediaFile.mp4" });
+        } else {
+          return new AttachmentBuilder(filePath, { name: "mediaFile.mp4" });
+        }
       });
       if (m.channel.type === ChannelType.GuildText) {
         await m.channel.send({
