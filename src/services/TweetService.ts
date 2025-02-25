@@ -36,7 +36,9 @@ export class TweetService {
 
     postURLs.forEach((url: string) => {
       // 取得したURLが投稿メッセージの中では||に囲まれているかチェック
-      const spoilerMatch = new RegExp(`\\|\\|\\s*${url}\\s*\\|\\|`).test(m.content);
+      const spoilerMatch = new RegExp(
+        `\\|\\|\\s*${url.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}(\\?.*?)?(#.*?)?\\s*\\|\\|`
+      ).test(m.content);
       if (spoilerMatch) {
         spoilerURLs.push(url);
       } else {
