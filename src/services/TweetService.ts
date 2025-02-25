@@ -1,9 +1,11 @@
 import { randomUUID } from "node:crypto";
 import fs from "node:fs/promises";
 import path from "node:path";
-import { AttachmentBuilder, ChannelType, Message } from "discord.js";
+import { ActionRowBuilder, ButtonBuilder, EmbedBuilder } from "@discordjs/builders";
+import { AttachmentBuilder, ButtonStyle, ChannelType, Client, Message } from "discord.js";
 import { ROOT_DIR } from "@/config/config";
 import { PostEmbed } from "@/discord/postEmbed";
+import { TweetData } from "@/shared/tweetdata";
 import { getTweetData } from "@/shared/wrapper";
 import { downloadVideo } from "@/utils/downloadVideo";
 
@@ -19,7 +21,7 @@ export class TweetService {
    * @param m Message
    * @returns Promise<void>
    */
-  async handleTweetURLs(m: Message) {
+  async handleTweetURLs(client: Client<boolean>, m: Message) {
     // https://twitter.com(or x.com)/hogehoge/{postID}かチェック
     const matchRes = m.content.match(TWITTER_URL_REGEX);
     if (!matchRes) return;
@@ -28,29 +30,53 @@ export class TweetService {
     const postURLs = uniqueArr(matchRes);
     if (!postURLs.length) return;
 
+    // Spoilerの有無でリストを分ける
+    const spoilerURLs: string[] = [];
+    const normalURLs: string[] = [];
+
+    postURLs.forEach((url: string) => {
+      // 取得したURLが投稿メッセージの中では||に囲まれているかチェック
+      const spoilerMatch = new RegExp(`\\|\\|\\s*${url}\\s*\\|\\|`).test(m.content);
+      if (spoilerMatch) {
+        spoilerURLs.push(url);
+      } else {
+        normalURLs.push(url);
+      }
+    });
+
     // 埋め込みメッセージを送信する
-    for (const postURL of postURLs) {
-      await this.sendEmbedMessage(m, postURL);
+    for (const postURL of spoilerURLs) {
+      const tweetData = await getTweetData(postURL);
+      if (!tweetData) {
+        await m.reply({
+          content: "ツイートの取得に失敗しました。",
+          allowedMentions: { repliedUser: false },
+        });
+      } else {
+        await this.sendSpoilerEmbedMessage(m, tweetData, client);
+      }
+    }
+
+    for (const postURL of normalURLs) {
+      const tweetData = await getTweetData(postURL);
+      if (!tweetData) {
+        await m.reply({
+          content: "ツイートの取得に失敗しました。",
+          allowedMentions: { repliedUser: false },
+        });
+      } else {
+        await this.sendEmbedMessage(m, tweetData);
+      }
     }
   }
 
   /**
-   * ツイート（ポスト）の情報を埋め込みメッセージでDiscordに送信する
-   *
+   * 埋め込みメッセージを作成する
    * @param m Message
-   * @param postURL string
-   * @returns Promise<void>
+   * @param tweetData TweetData vxTwitter, fxTwitterから受け取ったツイートデータ
+   * @returns Promise<EmbedBuilder[]>
    */
-  private async sendEmbedMessage(m: Message, postURL: string) {
-    const tweetData = await getTweetData(postURL);
-    if (!tweetData) {
-      await m.reply({
-        content: "ツイートの取得に失敗しました。",
-        allowedMentions: { repliedUser: false },
-      });
-      return;
-    }
-
+  private async createEmbedMessage(m: Message, tweetData: TweetData): Promise<EmbedBuilder[]> {
     // 投稿されたポストの埋め込みを削除する
     await m.suppressEmbeds(true);
 
@@ -79,9 +105,57 @@ export class TweetService {
     }
 
     // 埋め込みデータ生成
-    const embedPostInfo = postEmbed.createEmbed(tweetData);
+    return postEmbed.createEmbed(tweetData);
+  }
+
+  /**
+   * ツイート（ポスト）の情報を埋め込みメッセージでDiscordに送信する
+   *
+   * @param m Message
+   * @param postURL string
+   * @returns Promise<void>
+   */
+  private async sendEmbedMessage(m: Message, tweetData: TweetData) {
+    const embedPostInfo = await this.createEmbedMessage(m, tweetData);
 
     await m.reply({ embeds: embedPostInfo, allowedMentions: { repliedUser: false } });
+  }
+
+  /**
+   * Spoiler対象のツイート（ポスト）の情報のメッセージを送ります
+   * @param m Message
+   * @param tweetData TweetData
+   * @param client Client<boolean>
+   */
+  private async sendSpoilerEmbedMessage(m: Message, tweetData: TweetData, client: Client<boolean>) {
+    const embedPostInfo = await this.createEmbedMessage(m, tweetData);
+
+    const button = new ButtonBuilder()
+      .setCustomId(`reveal_spoiler_${m.id}`)
+      .setLabel("ネタバレを見る")
+      .setStyle(ButtonStyle.Primary);
+
+    const row = new ActionRowBuilder<ButtonBuilder>().addComponents(button);
+
+    // ボタン付きのメッセージを送信
+    await m.reply({
+      content: "これはネタバレです",
+      allowedMentions: { repliedUser: false },
+      components: [row],
+    });
+
+    client.on("interactionCreate", async (interaction) => {
+      if (!interaction.isButton()) return;
+      if (interaction.customId !== `reveal_spoiler_${m.id}`) return;
+
+      await interaction.deferUpdate();
+      await interaction.followUp({
+        content: "",
+        embeds: embedPostInfo,
+        ephemeral: true,
+        allowedMentions: { repliedUser: false },
+      });
+    });
   }
 
   /**

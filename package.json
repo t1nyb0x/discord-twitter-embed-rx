@@ -1,12 +1,12 @@
 {
-  "name": "DiscordTwitterEmbedRX",
-  "version": "1.7.2",
+  "name": "discord-twitter-embed-rx",
+  "version": "1.8.0",
   "description": "",
   "main": "index.js",
   "scripts": {
     "start": "node --env-file=.env dist/index.js",
     "start:docker": "node ./dist/index.js",
-    "debug": "tsx watch --env-file=.env src/index.ts",
+    "debug": "tsc --noEmit && tsx watch --env-file=.env src/index.ts",
     "compile": "tsc -p . && tsc-alias --resolve-full-paths",
     "compile:test": "tsc -p . --noEmit",
     "test": "echo \"Error: no test specified\" && exit 1",
@@ -52,13 +52,13 @@
     "lint-staged": "^15.2.10",
     "prettier": "^3.3.3",
     "tsc-alias": "^1.8.10",
-    "typescript": "^5.6.3"
+    "typescript": "^5.6.3",
+    "ts-node": "^10.9.2",
+    "tsx": "^4.19.3"
   },
   "dependencies": {
     "@discordjs/builders": "^1.9.0",
     "axios": "^1.7.7",
-    "discord.js": "^14.16.3",
-    "ts-node": "^10.9.2",
-    "tsx": "^4.19.3"
+    "discord.js": "^14.16.3"
   }
 }
