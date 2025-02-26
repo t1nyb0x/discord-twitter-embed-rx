@@ -9,7 +9,7 @@ const __dirname = path.dirname(__filename);
 // ルートディレクトリ取得
 export const ROOT_DIR = path.dirname(__dirname);
 
-const configPath = path.join(ROOT_DIR, "/config.yml");
+const configPath = path.join(path.dirname(ROOT_DIR), "/.config/config.yml");
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 let config: any = {};
 try {
