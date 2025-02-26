@@ -5,6 +5,7 @@ WORKDIR /app
 COPY ["package.json", "./", "package-lock.json", "./"]
 COPY ["tsconfig.json", "./"]
 COPY ["./src", "./src"]
+COPY ["./.config", "./.config"]
 
 RUN npm i
 
