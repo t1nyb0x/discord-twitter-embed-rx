@@ -4,10 +4,10 @@ WORKDIR /app
 
 COPY ["package.json", "./"]
 COPY ["package-lock.json", "./"]
-RUN npm ci
-
 COPY ["tsconfig.json", "./"]
 COPY ["./src", "./src"]
+RUN npm ci
+
 COPY ["./.config", "./.config"]
 
 CMD ["npm", "run", "start:docker"]
