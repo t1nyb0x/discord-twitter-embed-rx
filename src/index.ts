@@ -1,4 +1,7 @@
+import fs from "node:fs";
+import path from "node:path";
 import { Client, GatewayIntentBits, Message } from "discord.js";
+import { ROOT_DIR } from "./config/config";
 import { onMessageCreate } from "@/discord/handler";
 
 enum ApplicationMode {
@@ -7,6 +10,9 @@ enum ApplicationMode {
 }
 
 const ENV = process.env.NODE_ENV;
+
+const packageJson = JSON.parse(fs.readFileSync(path.join(path.dirname(ROOT_DIR), "/package.json"), "utf8"));
+const version = packageJson.version;
 
 // === Application Mode === // Todo export to other file
 let appMode: ApplicationMode = ApplicationMode.Production;
@@ -19,6 +25,7 @@ switch (ENV) {
     break;
 }
 console.log(`Mode: ${appMode}`);
+console.log(`Version: ${version}`);
 
 // === Load bot token from environ variable ===
 let token: string | undefined;
@@ -55,6 +62,11 @@ client.on("ready", async () => {
     throw new Error("Failed load client");
   }
   console.log(`Logged in as ${client.user.tag}`);
+
+  updateStatus();
+
+  // update per 5 min.
+  setInterval(updateStatus, 5 * 60 * 1000);
 });
 
 // On Message Create
@@ -62,3 +74,8 @@ client.on("messageCreate", (m: Message) => onMessageCreate(client, m));
 
 // === Login ===
 client.login(token);
+
+const updateStatus = () => {
+  const serverCount = client.guilds.cache.size;
+  client.user?.setActivity(`v${version}, 導入サーバー数: ${serverCount}`);
+};
