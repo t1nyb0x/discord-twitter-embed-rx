@@ -100,8 +100,10 @@ export class TweetService {
         await this.downloadMedia(m, filteredMediaUrls.validUrls, uniqueTmpDir, _isSpoiler);
         // ファイルサイズ上限を超えるURLはそのまま貼り付ける
         for (const mediaUrl of filteredMediaUrls.invalidUrls) {
-          if (m.channel.type === ChannelType.GuildText) {
-            await m.channel.send(mediaUrl);
+          if (/\.mp4$/.test(mediaUrl)) {
+            if (m.channel.type === ChannelType.GuildText) {
+              await m.channel.send(mediaUrl);
+            }
           }
         }
       } catch (e) {
