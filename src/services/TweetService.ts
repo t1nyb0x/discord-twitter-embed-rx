@@ -8,6 +8,7 @@ import { PostEmbed } from "@/discord/postEmbed";
 import { TweetData } from "@/shared/tweetdata";
 import { getTweetData } from "@/shared/wrapper";
 import { downloadVideo } from "@/utils/downloadVideo";
+import { FilterMedia } from "@/utils/filterMedia";
 
 const TWITTER_URL_REGEX = /https:\/\/(x|twitter)\.com\/[A-Za-z_0-9]+\/status\/[0-9]+/g;
 const postEmbed = new PostEmbed();
@@ -93,7 +94,16 @@ export class TweetService {
       try {
         await fs.mkdir(uniqueTmpDir, { recursive: true });
         console.log(`Temporary directory created: ${uniqueTmpDir}`);
-        await this.downloadMedia(m, tweetData.mediaUrls, uniqueTmpDir, _isSpoiler);
+        const filterMedia = new FilterMedia();
+        const filteredMediaUrls = await filterMedia.mediaSizeFilter(tweetData.mediaUrls);
+        // 設定されたファイルサイズ上限を超えなければダウンロード行う
+        await this.downloadMedia(m, filteredMediaUrls.validUrls, uniqueTmpDir, _isSpoiler);
+        // ファイルサイズ上限を超えるURLはそのまま貼り付ける
+        for (const mediaUrl of filteredMediaUrls.invalidUrls) {
+          if (m.channel.type === ChannelType.GuildText) {
+            await m.channel.send(mediaUrl);
+          }
+        }
       } catch (e) {
         console.error(`Error sending file: ${e}`);
         if (m.channel.type === ChannelType.GuildText) {

@@ -1,6 +1,6 @@
 {
   "name": "discord-twitter-embed-rx",
-  "version": "1.8.2",
+  "version": "1.9.0",
   "description": "",
   "main": "index.js",
   "scripts": {
@@ -43,22 +43,24 @@
   "homepage": "https://github.com/t1nyb0x/discord-twitter-embed-rx#readme",
   "devDependencies": {
     "@eslint/compat": "^1.2.1",
+    "@types/js-yaml": "^4.0.9",
     "@typescript-eslint/eslint-plugin": "^8.11.0",
     "@typescript-eslint/parser": "^8.11.0",
     "eslint": "^9.13.0",
-    "eslint-config-prettier": "^9.1.0",
+    "eslint-config-prettier": "^10.0.0",
     "eslint-plugin-import": "^2.31.0",
     "husky": "^9.1.6",
     "lint-staged": "^15.2.10",
     "prettier": "^3.3.3",
-    "tsc-alias": "^1.8.10",
-    "typescript": "^5.6.3",
     "ts-node": "^10.9.2",
-    "tsx": "^4.19.3"
+    "tsc-alias": "^1.8.10",
+    "tsx": "^4.19.3",
+    "typescript": "^5.6.3"
   },
   "dependencies": {
     "@discordjs/builders": "^1.9.0",
     "axios": "^1.7.7",
-    "discord.js": "^14.16.3"
+    "discord.js": "^14.16.3",
+    "js-yaml": "^4.1.0"
   }
 }
