@@ -37,6 +37,7 @@ export class FilterMedia {
       mediaUrls.map(async (url) => {
         try {
           const fileSize = await this.getFileSize(url);
+          console.log("fileSize: " + fileSize);
           if (fileSize <= config.MEDIA_MAX_FILE_SIZE) {
             validUrls.push(url);
           } else {
@@ -44,6 +45,7 @@ export class FilterMedia {
           }
         } catch (error) {
           console.error(new Error(`Error checking file size ${error}`));
+          invalidUrls.push(url);
         }
       })
     );
