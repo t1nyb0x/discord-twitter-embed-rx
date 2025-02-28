@@ -16,6 +16,8 @@ jobs:
               uses: actions/checkout@v4
 
             - name: Create release PR
+              env:
+                GITHUB_TOKEN: ${{ secrets.GH_PAT }}
               uses: googleapis/release-please-action@v4
               with:
                 release-type: node
