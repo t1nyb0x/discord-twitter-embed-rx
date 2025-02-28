@@ -71,6 +71,7 @@ export class TweetService {
         await this.sendEmbedMessage(m, tweetData);
       }
     }
+    return;
   }
 
   /**
@@ -138,6 +139,7 @@ export class TweetService {
     const embedPostInfo = await this.createEmbedMessage(m, tweetData);
 
     await m.reply({ embeds: embedPostInfo, allowedMentions: { repliedUser: false } });
+    return;
   }
 
   /**
@@ -175,6 +177,7 @@ export class TweetService {
         allowedMentions: { repliedUser: false },
       });
     });
+    return;
   }
 
   /**
@@ -204,6 +207,7 @@ export class TweetService {
     if (files.length) {
       await this.sendMediaAttachment(m, uniqueTmpDir, files, _isSpoiler);
     }
+    return;
   }
 
   /**
@@ -232,5 +236,6 @@ export class TweetService {
         });
       }
     }
+    return;
   }
 }
