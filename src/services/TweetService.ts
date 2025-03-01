@@ -27,6 +27,10 @@ export class TweetService {
     const matchRes = m.content.match(TWITTER_URL_REGEX);
     if (!matchRes) return;
 
+    if (m.channel.type === ChannelType.GuildText) {
+      m.channel.sendTyping();
+    }
+
     // 配列内部の重複を除去する
     const postURLs = uniqueArr(matchRes);
     if (!postURLs.length) return;
@@ -71,6 +75,7 @@ export class TweetService {
         await this.sendEmbedMessage(m, tweetData);
       }
     }
+    return;
   }
 
   /**
@@ -138,6 +143,7 @@ export class TweetService {
     const embedPostInfo = await this.createEmbedMessage(m, tweetData);
 
     await m.reply({ embeds: embedPostInfo, allowedMentions: { repliedUser: false } });
+    return;
   }
 
   /**
@@ -175,6 +181,7 @@ export class TweetService {
         allowedMentions: { repliedUser: false },
       });
     });
+    return;
   }
 
   /**
@@ -204,6 +211,7 @@ export class TweetService {
     if (files.length) {
       await this.sendMediaAttachment(m, uniqueTmpDir, files, _isSpoiler);
     }
+    return;
   }
 
   /**
@@ -232,5 +240,6 @@ export class TweetService {
         });
       }
     }
+    return;
   }
 }

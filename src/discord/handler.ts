@@ -5,5 +5,7 @@ export async function onMessageCreate(client: Client<boolean>, m: Message) {
   if ((client.user !== null && m.author.id === client.user.id) || m.author.bot) return;
 
   const tweetService = new TweetService();
-  tweetService.handleTweetURLs(client, m);
+  await tweetService.handleTweetURLs(client, m);
+
+  return;
 }
