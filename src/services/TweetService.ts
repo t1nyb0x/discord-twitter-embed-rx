@@ -27,6 +27,10 @@ export class TweetService {
     const matchRes = m.content.match(TWITTER_URL_REGEX);
     if (!matchRes) return;
 
+    if (m.channel.type === ChannelType.GuildText) {
+      m.channel.sendTyping();
+    }
+
     // 配列内部の重複を除去する
     const postURLs = uniqueArr(matchRes);
     if (!postURLs.length) return;
