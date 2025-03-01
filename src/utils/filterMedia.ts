@@ -44,6 +44,7 @@ export class FilterMedia {
           }
         } catch (error) {
           console.error(new Error(`Error checking file size ${error}`));
+          invalidUrls.push(url);
         }
       })
     );

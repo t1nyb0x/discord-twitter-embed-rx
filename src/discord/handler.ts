@@ -1,4 +1,4 @@
-import { Message, Client } from "discord.js";
+import { Message, Client, ChannelType } from "discord.js";
 import { TweetService } from "@/services/TweetService";
 
 export async function onMessageCreate(client: Client<boolean>, m: Message) {
@@ -6,6 +6,5 @@ export async function onMessageCreate(client: Client<boolean>, m: Message) {
 
   const tweetService = new TweetService();
   await tweetService.handleTweetURLs(client, m);
-
   return;
 }
