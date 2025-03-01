@@ -109,6 +109,6 @@
     "skipLibCheck": true                                 /* Skip type checking all .d.ts files. */
   },
   "include": ["src/**/*"],
-  "exclude": ["build", "node_modules"],
+  "exclude": ["build", "node_modules", "eslint.config.mjs"],
   "compileOnSave": false
 }

@@ -9,11 +9,11 @@ import { TweetData } from "@/shared/tweetdata";
 import { getTweetData } from "@/shared/wrapper";
 import { downloadVideo } from "@/utils/downloadVideo";
 import { FilterMedia } from "@/utils/filterMedia";
+import { uniqueArr } from "@/utils/helper";
 
 const TWITTER_URL_REGEX = /https:\/\/(x|twitter)\.com\/[A-Za-z_0-9]+\/status\/[0-9]+/g;
 const postEmbed = new PostEmbed();
 const tmpDir = "tmp";
-const uniqueArr = <T>(arr: T[]): T[] => [...new Set(arr)];
 
 export class TweetService {
   /**
