@@ -1,5 +1,5 @@
 import https from "https";
-import config from "../config/config";
+import config from "@/config/config";
 
 export class FilterMedia {
   /**

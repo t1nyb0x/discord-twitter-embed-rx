@@ -1,5 +1,5 @@
 import axios from "axios";
-import { FXTwitter } from "./fxtwitter";
+import { FXTwitter } from "@/fxtwitter/fxtwitter";
 
 export class FxTwitterApi {
   async getPostInformation(url: string): Promise<FXTwitter | undefined> {

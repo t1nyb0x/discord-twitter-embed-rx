@@ -1,7 +1,7 @@
-import { FxTwitterApi } from "../fxtwitter/api";
-import { VxTwitterApi } from "../vxtwitter/api";
-import { FXToTweetData, VxToTweetData } from "./converter";
-import { TweetData } from "./tweetdata";
+import { FxTwitterApi } from "@/fxtwitter/api";
+import { FXToTweetData, VxToTweetData } from "@/shared/converter";
+import { TweetData } from "@/shared/tweetdata";
+import { VxTwitterApi } from "@/vxtwitter/api";
 
 // Todo change name for readable
 const REGEX = /\/(x|twitter)/;

@@ -1,5 +1,5 @@
 import axios from "axios";
-import { VxTwitter } from "./vxtwitter";
+import { VxTwitter } from "@/vxtwitter/vxtwitter";
 
 export class VxTwitterApi {
   async getPostInformation(url: string): Promise<VxTwitter | undefined> {

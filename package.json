@@ -9,7 +9,7 @@
     "debug": "tsc --noEmit && tsx watch --env-file=.env src/index.ts",
     "compile": "tsc -p . && tsc-alias --resolve-full-paths",
     "compile:test": "tsc -p . --noEmit",
-    "test": "echo \"Error: no test specified\" && exit 1",
+    "test": "jest",
     "lint": "eslint src/index.ts",
     "postinstall": "tsc -p . && tsc-alias --resolve-full-paths"
   },
@@ -56,6 +56,7 @@
     "lint-staged": "^15.2.10",
     "prettier": "^3.3.3",
     "ts-jest": "^29.2.6",
+    "ts-jest-resolver": "^2.0.1",
     "ts-node": "^10.9.2",
     "tsc-alias": "^1.8.10",
     "tsx": "^4.19.3",

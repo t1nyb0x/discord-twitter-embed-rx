@@ -27,11 +27,11 @@ export default [
     settings: {
       "import/resolver": {
         typescript: {
-          project: ["./tsconfig.json", "./tests/tsconfig.test.json"],
+          project: ["./tsconfig.json"],
           tsconfigRootDir: __dirname,
         },
         node: {
-          extensions: [".js", ".jsx", ".ts", ".tsx"],
+          extensions: [".js", ".jsx", ".ts", ".tsx", ".cjs"],
         },
       },
     },
@@ -46,11 +46,11 @@ export default [
       sourceType: "module",
 
       parserOptions: {
-        project: ["./tsconfig.json", "./tests/tsconfig.test.json"],
+        project: ["./tsconfig.json"],
         tsconfigRootDir: __dirname,
       },
     },
-    ignores: ["jest.config.mjs"],
+    ignores: ["jest.config.cjs"],
 
     rules: {
       semi: [2, "always"],

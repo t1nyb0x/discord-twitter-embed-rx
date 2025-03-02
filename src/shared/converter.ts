@@ -1,6 +1,6 @@
-import { Tweet } from "fxtwitter/fxtwitter";
-import { VxTwitter } from "vxtwitter/vxtwitter";
-import { TweetData } from "./tweetdata";
+import { Tweet } from "@/fxtwitter/fxtwitter";
+import { TweetData } from "@/shared/tweetdata";
+import { VxTwitter } from "@/vxtwitter/vxtwitter";
 
 /**
  * vxTwitterからの返却データをTweetDataに変換する

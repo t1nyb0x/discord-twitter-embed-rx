@@ -1,6 +1,6 @@
 import { EmbedBuilder } from "@discordjs/builders";
 import { APIEmbedField } from "discord.js";
-import { TweetData } from "shared/tweetdata";
+import { TweetData } from "@/shared/tweetdata";
 
 function createField(_name: string, count: number): APIEmbedField {
   return {

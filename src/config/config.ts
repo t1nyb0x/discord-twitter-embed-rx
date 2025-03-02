@@ -1,10 +1,6 @@
 import fs from "node:fs";
 import path from "path";
-import { fileURLToPath } from "url";
 import yaml from "js-yaml";
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
 
 // ルートディレクトリ取得
 export const ROOT_DIR = path.dirname(__dirname);
