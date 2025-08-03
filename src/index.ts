@@ -1,8 +1,8 @@
 import fs from "node:fs";
 import path from "node:path";
-import { Client, GatewayIntentBits, Message } from "discord.js";
+import { Client, GatewayIntentBits, Message, Partials } from "discord.js";
 import { ROOT_DIR } from "./config/config";
-import { onMessageCreate } from "@/discord/handler";
+import { onMessageCreate, onMessageDelete } from "@/discord/handler";
 
 enum ApplicationMode {
   Production = "production",
@@ -54,7 +54,11 @@ const client = new Client({
     GatewayIntentBits.GuildMembers,
     GatewayIntentBits.GuildMessageTyping,
   ],
+  partials: [Partials.Message, Partials.Channel],
 });
+
+// === Reply Map string, {replyId: string, channelId: string} ===
+const replyMap = new Map<string, { replyId: string; channelId: string }>();
 
 // === Event handlers ===
 // On ready
@@ -71,7 +75,9 @@ client.on("ready", async () => {
 });
 
 // On Message Create
-client.on("messageCreate", (m: Message) => onMessageCreate(client, m));
+client.on("messageCreate", (m: Message) => onMessageCreate(client, m, replyMap));
+// On Message Delete
+client.on("messageDelete", (m) => onMessageDelete(client, m as Message, replyMap));
 
 // === Login ===
 client.login(token);

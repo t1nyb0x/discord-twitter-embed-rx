@@ -22,7 +22,11 @@ export class TweetService {
    * @param m Message
    * @returns Promise<void>
    */
-  async handleTweetURLs(client: Client<boolean>, m: Message) {
+  async handleTweetURLs(
+    client: Client<boolean>,
+    m: Message,
+    replyMap: Map<string, { replyId: string; channelId: string }>
+  ) {
     // https://twitter.com(or x.com)/hogehoge/{postID}かチェック
     const matchRes = m.content.match(TWITTER_URL_REGEX);
     if (!matchRes) return;
@@ -55,24 +59,40 @@ export class TweetService {
     for (const postURL of spoilerURLs) {
       const tweetData = await getTweetData(postURL);
       if (!tweetData) {
-        await m.reply({
+        const replyMessage = await m.reply({
           content: "ツイートの取得に失敗しました。",
           allowedMentions: { repliedUser: false },
         });
+        replyMap.set(m.id, {
+          replyId: replyMessage.id,
+          channelId: m.channelId,
+        });
       } else {
-        await this.sendSpoilerEmbedMessage(m, tweetData, client);
+        const replyMessage = await this.sendSpoilerEmbedMessage(m, tweetData, client);
+        replyMap.set(m.id, {
+          replyId: replyMessage.id,
+          channelId: m.channelId,
+        });
       }
     }
 
     for (const postURL of normalURLs) {
       const tweetData = await getTweetData(postURL);
       if (!tweetData) {
-        await m.reply({
+        const replyMessage = await m.reply({
           content: "ツイートの取得に失敗しました。",
           allowedMentions: { repliedUser: false },
         });
+        replyMap.set(m.id, {
+          replyId: replyMessage.id,
+          channelId: m.channelId,
+        });
       } else {
-        await this.sendEmbedMessage(m, tweetData);
+        const replyMessage = await this.sendEmbedMessage(m, tweetData);
+        replyMap.set(m.id, {
+          replyId: replyMessage.id,
+          channelId: m.channelId,
+        });
       }
     }
     return;
@@ -142,8 +162,7 @@ export class TweetService {
   private async sendEmbedMessage(m: Message, tweetData: TweetData) {
     const embedPostInfo = await this.createEmbedMessage(m, tweetData);
 
-    await m.reply({ embeds: embedPostInfo, allowedMentions: { repliedUser: false } });
-    return;
+    return await m.reply({ embeds: embedPostInfo, allowedMentions: { repliedUser: false } });
   }
 
   /**
@@ -163,7 +182,7 @@ export class TweetService {
     const row = new ActionRowBuilder<ButtonBuilder>().addComponents(button);
 
     // ボタン付きのメッセージを送信
-    await m.reply({
+    const replyMessage = await m.reply({
       content: "これはネタバレです",
       allowedMentions: { repliedUser: false },
       components: [row],
@@ -181,7 +200,7 @@ export class TweetService {
         allowedMentions: { repliedUser: false },
       });
     });
-    return;
+    return replyMessage;
   }
 
   /**
