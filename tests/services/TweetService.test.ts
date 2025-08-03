@@ -32,6 +32,16 @@ describe("TweetService", () => {
     (getTweetData as jest.Mock).mockResolvedValue({
       text: "これはテスト投稿です",
       user: { name: "Test User", screen_name: "testuser" },
+      author: {
+        name: "Test User",
+        url: "https://x.com/nhk_news",
+        iconUrl: "",
+      },
+      tweetUrl: "https://x.com/nhk_news/status/1895772005892513948",
+      replies: 10,
+      likes: 20,
+      retweets: 5,
+      timestamp: new Date(),
       mediaUrls: [],
     });
 
