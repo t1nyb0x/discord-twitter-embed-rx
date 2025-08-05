@@ -1,10 +1,4 @@
 services:
-  twitter-rx:
-    container_name: TwitterEmbedRX
-    image: ghcr.io/t1nyb0x/discord-twitter-embed-rx:latest
-    restart: always
-    env_file:
-      - .env
   redis:
     container_name: Redis
     image: redis:8.0.3-alpine

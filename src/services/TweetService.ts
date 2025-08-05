@@ -4,6 +4,7 @@ import path from "node:path";
 import { ActionRowBuilder, ButtonBuilder, EmbedBuilder } from "@discordjs/builders";
 import { AttachmentBuilder, ButtonStyle, ChannelType, Client, Message } from "discord.js";
 import { ROOT_DIR } from "@/config/config";
+import { logReply } from "@/db/replyLogger";
 import { PostEmbed } from "@/discord/postEmbed";
 import { TweetData } from "@/shared/tweetdata";
 import { getTweetData } from "@/shared/wrapper";
@@ -22,11 +23,7 @@ export class TweetService {
    * @param m Message
    * @returns Promise<void>
    */
-  async handleTweetURLs(
-    client: Client<boolean>,
-    m: Message,
-    replyMap: Map<string, { replyId: string; channelId: string }>
-  ) {
+  async handleTweetURLs(client: Client<boolean>, m: Message) {
     // https://twitter.com(or x.com)/hogehoge/{postID}かチェック
     const matchRes = m.content.match(TWITTER_URL_REGEX);
     if (!matchRes) return;
@@ -63,13 +60,13 @@ export class TweetService {
           content: "ツイートの取得に失敗しました。",
           allowedMentions: { repliedUser: false },
         });
-        replyMap.set(m.id, {
+        await logReply(m.id, {
           replyId: replyMessage.id,
           channelId: m.channelId,
         });
       } else {
         const replyMessage = await this.sendSpoilerEmbedMessage(m, tweetData, client);
-        replyMap.set(m.id, {
+        await logReply(m.id, {
           replyId: replyMessage.id,
           channelId: m.channelId,
         });
@@ -83,13 +80,13 @@ export class TweetService {
           content: "ツイートの取得に失敗しました。",
           allowedMentions: { repliedUser: false },
         });
-        replyMap.set(m.id, {
+        await logReply(m.id, {
           replyId: replyMessage.id,
           channelId: m.channelId,
         });
       } else {
         const replyMessage = await this.sendEmbedMessage(m, tweetData);
-        replyMap.set(m.id, {
+        await logReply(m.id, {
           replyId: replyMessage.id,
           channelId: m.channelId,
         });

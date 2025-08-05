@@ -2,6 +2,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { Client, GatewayIntentBits, Message, Partials } from "discord.js";
 import { ROOT_DIR } from "./config/config";
+import { connectRedis } from "./db/connect";
 import { onMessageCreate, onMessageDelete } from "@/discord/handler";
 
 enum ApplicationMode {
@@ -57,9 +58,6 @@ const client = new Client({
   partials: [Partials.Message, Partials.Channel],
 });
 
-// === Reply Map string, {replyId: string, channelId: string} ===
-const replyMap = new Map<string, { replyId: string; channelId: string }>();
-
 // === Event handlers ===
 // On ready
 client.on("ready", async () => {
@@ -75,12 +73,13 @@ client.on("ready", async () => {
 });
 
 // On Message Create
-client.on("messageCreate", (m: Message) => onMessageCreate(client, m, replyMap));
+client.on("messageCreate", (m: Message) => onMessageCreate(client, m));
 // On Message Delete
-client.on("messageDelete", (m) => onMessageDelete(client, m as Message, replyMap));
+client.on("messageDelete", (m) => onMessageDelete(client, m as Message));
 
 // === Login ===
 client.login(token);
+connectRedis();
 
 const updateStatus = () => {
   const serverCount = client.guilds.cache.size;
