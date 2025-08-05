@@ -1,28 +1,17 @@
 import { Message, Client } from "discord.js";
+import { deleteReply, popReply } from "@/db/replyLogger";
 import { TweetService } from "@/services/TweetService";
 
-export async function onMessageCreate(
-  client: Client<boolean>,
-  m: Message,
-  replyMap: Map<string, { replyId: string; channelId: string }>
-) {
+export async function onMessageCreate(client: Client<boolean>, m: Message) {
   if ((client.user !== null && m.author.id === client.user.id) || m.author.bot) return;
 
   const tweetService = new TweetService();
-  await tweetService.handleTweetURLs(client, m, replyMap);
+  await tweetService.handleTweetURLs(client, m);
   return;
 }
 
-export async function onMessageDelete(
-  client: Client<boolean>,
-  m: Message,
-  replyMap: Map<string, { replyId: string; channelId: string }>
-) {
-  // if (m.author.bot) return;
-  // 削除イベントのmessageがキャッシュされてなければpartialとして扱う
-  if (!replyMap?.has(m.id)) return;
-
-  const replyData = replyMap.get(m.id);
+export async function onMessageDelete(client: Client<boolean>, m: Message) {
+  const replyData = await popReply(m.id);
   if (!replyData) return;
   const { replyId, channelId } = replyData;
 
@@ -32,7 +21,7 @@ export async function onMessageDelete(
 
     const botMsg = await channel.messages.fetch(replyId);
     if (botMsg) await botMsg.delete();
-    replyMap.delete(m.id);
+    await deleteReply(m.id);
   } catch (err) {
     console.error(`Failed to delete message:`, err);
   }
