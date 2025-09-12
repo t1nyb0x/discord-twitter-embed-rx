@@ -1,5 +1,17 @@
 # Changelog
 
+## [1.13.1](https://github.com/t1nyb0x/discord-twitter-embed-rx/compare/v1.13.0...v1.13.1) (2025-09-12)
+
+
+### Bug Fixes
+
+* **deps:** update dependency @discordjs/builders to v1.11.3 ([38ab990](https://github.com/t1nyb0x/discord-twitter-embed-rx/commit/38ab990fd6fd7f6506536860eec3cf506eaf9521))
+* **deps:** update dependency @discordjs/builders to v1.11.3 ([5d7774f](https://github.com/t1nyb0x/discord-twitter-embed-rx/commit/5d7774f7b4a72f728d236f689af0baa734f66d77))
+* **deps:** update dependency discord.js to v14.22.1 ([b1cf086](https://github.com/t1nyb0x/discord-twitter-embed-rx/commit/b1cf086616bbfe51fb484ca35e1a21ed8d10188c))
+* **deps:** update dependency discord.js to v14.22.1 ([d178b7f](https://github.com/t1nyb0x/discord-twitter-embed-rx/commit/d178b7f1a1f3ad6769e8fcfc5a73ae56770fea2f))
+* **deps:** update dependency redis to v5.8.2 ([574664d](https://github.com/t1nyb0x/discord-twitter-embed-rx/commit/574664ddbd95e9d3157837630ec1e590665425ac))
+* **deps:** update dependency redis to v5.8.2 ([3af81f1](https://github.com/t1nyb0x/discord-twitter-embed-rx/commit/3af81f1f537302c712d1e4a09e735b35f8a46d66))
+
 ## [1.13.0](https://github.com/t1nyb0x/discord-twitter-embed-rx/compare/v1.12.0...v1.13.0) (2025-08-05)
 
 
