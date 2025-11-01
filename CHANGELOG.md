@@ -1,5 +1,33 @@
 # Changelog
 
+## [1.13.1](https://github.com/t1nyb0x/discord-twitter-embed-rx/compare/v1.13.0...v1.13.1) (2025-09-12)
+
+
+### Bug Fixes
+
+* **deps:** update dependency @discordjs/builders to v1.11.3 ([38ab990](https://github.com/t1nyb0x/discord-twitter-embed-rx/commit/38ab990fd6fd7f6506536860eec3cf506eaf9521))
+* **deps:** update dependency @discordjs/builders to v1.11.3 ([5d7774f](https://github.com/t1nyb0x/discord-twitter-embed-rx/commit/5d7774f7b4a72f728d236f689af0baa734f66d77))
+* **deps:** update dependency discord.js to v14.22.1 ([b1cf086](https://github.com/t1nyb0x/discord-twitter-embed-rx/commit/b1cf086616bbfe51fb484ca35e1a21ed8d10188c))
+* **deps:** update dependency discord.js to v14.22.1 ([d178b7f](https://github.com/t1nyb0x/discord-twitter-embed-rx/commit/d178b7f1a1f3ad6769e8fcfc5a73ae56770fea2f))
+* **deps:** update dependency redis to v5.8.2 ([574664d](https://github.com/t1nyb0x/discord-twitter-embed-rx/commit/574664ddbd95e9d3157837630ec1e590665425ac))
+* **deps:** update dependency redis to v5.8.2 ([3af81f1](https://github.com/t1nyb0x/discord-twitter-embed-rx/commit/3af81f1f537302c712d1e4a09e735b35f8a46d66))
+
+## [1.13.0](https://github.com/t1nyb0x/discord-twitter-embed-rx/compare/v1.12.0...v1.13.0) (2025-08-05)
+
+
+### Features
+
+* Redis導入 ([9d57fb9](https://github.com/t1nyb0x/discord-twitter-embed-rx/commit/9d57fb9dc0278ba4ad19d160dd36d31c1107b8a6))
+* Redis導入, 元メッセージ削除時にそこに返信している自発言を削除するように ([7f076f5](https://github.com/t1nyb0x/discord-twitter-embed-rx/commit/7f076f52ebf43599678bf27913c71873392f123c))
+* Redis導入, 元メッセージ削除時にそこに返信している自発言を削除するように ([c92f7ce](https://github.com/t1nyb0x/discord-twitter-embed-rx/commit/c92f7ce638f70f2056b6fd7e1c6ca6ad20a202da))
+
+
+### Bug Fixes
+
+* **deps:** update dependency axios to v1.11.0 ([8f0aaeb](https://github.com/t1nyb0x/discord-twitter-embed-rx/commit/8f0aaeb6dbfe6f91486089b726946c8350da4251))
+* **deps:** update dependency redis to v5.8.0 ([64e5fb1](https://github.com/t1nyb0x/discord-twitter-embed-rx/commit/64e5fb13f8e1702b09771535890bb8bd50e9e6a1))
+* **deps:** update dependency redis to v5.8.0 ([27d7ac5](https://github.com/t1nyb0x/discord-twitter-embed-rx/commit/27d7ac5a20538f4fc30d6064e0b72346edcfa5d9))
+
 ## [1.12.0](https://github.com/t1nyb0x/discord-twitter-embed-rx/compare/v1.11.0...v1.12.0) (2025-08-03)
 
 
