@@ -38,7 +38,7 @@ export class PostEmbed {
       .setTimestamp(post.timestamp);
     let description = post.text;
     if (post.quoteData != undefined) {
-      const quoteText = this.quotePrefix + "@" + post.quoteData.author.id + " " + post.quoteData.text;
+      const quoteText = this.quotePrefix + "`@" + post.quoteData.author.id + "` " + post.quoteData.text;
       const quoteUrl = "(" + post.quoteData.tweetUrl + ")";
       description += this.br + this.br + quoteText + this.br + quoteUrl;
     }
