@@ -1,9 +1,18 @@
 import fs from "node:fs";
 import path from "node:path";
 import { Client, GatewayIntentBits, Message, Partials } from "discord.js";
-import { ROOT_DIR } from "./config/config";
+import config, { ROOT_DIR } from "./config/config";
 import { connectRedis } from "./db/connect";
-import { onMessageCreate, onMessageDelete } from "@/discord/handler";
+import { deleteReply, popReply } from "./db/replyLogger";
+import { DiscordEmbedBuilder } from "@/adapters/discord/EmbedBuilder";
+import { MessageHandler } from "@/adapters/discord/MessageHandler";
+import { TwitterAdapter } from "@/adapters/twitter/TwitterAdapter";
+import { MediaHandler } from "@/core/services/MediaHandler";
+import { TweetProcessor } from "@/core/services/TweetProcessor";
+import { RedisReplyLogger } from "@/infrastructure/db/RedisReplyLogger";
+import { FileManager } from "@/infrastructure/filesystem/FileManager";
+import { HttpClient } from "@/infrastructure/http/HttpClient";
+import { VideoDownloader } from "@/infrastructure/http/VideoDownloader";
 
 enum ApplicationMode {
   Production = "production",
@@ -46,6 +55,33 @@ if (token === undefined) {
   console.log("Successfully to load discord bot token.");
 }
 
+// === Dependency Injection Setup ===
+const tmpDir = path.join(path.dirname(ROOT_DIR), "tmp");
+
+// Infrastructure層
+const httpClient = new HttpClient();
+const fileManager = new FileManager(tmpDir);
+const videoDownloader = new VideoDownloader();
+const replyLogger = new RedisReplyLogger();
+
+// Core層
+const tweetProcessor = new TweetProcessor();
+const mediaHandler = new MediaHandler(httpClient, config.MEDIA_MAX_FILE_SIZE);
+
+// Adapter層
+const twitterAdapter = TwitterAdapter.createDefault();
+const embedBuilder = new DiscordEmbedBuilder();
+const messageHandler = new MessageHandler(
+  tweetProcessor,
+  twitterAdapter,
+  embedBuilder,
+  mediaHandler,
+  fileManager,
+  videoDownloader,
+  replyLogger,
+  tmpDir
+);
+
 // === Create discord bot client ===
 const client = new Client({
   intents: [
@@ -60,7 +96,7 @@ const client = new Client({
 
 // === Event handlers ===
 // On ready
-client.on("ready", async () => {
+client.on("clientReady", async () => {
   if (client.user === null) {
     throw new Error("Failed load client");
   }
@@ -73,9 +109,30 @@ client.on("ready", async () => {
 });
 
 // On Message Create
-client.on("messageCreate", (m: Message) => onMessageCreate(client, m));
+client.on("messageCreate", (m: Message) => {
+  messageHandler.handleMessage(client, m).catch((error) => {
+    console.error("Error handling message:", error);
+  });
+});
+
 // On Message Delete
-client.on("messageDelete", (m) => onMessageDelete(client, m as Message));
+client.on("messageDelete", async (m) => {
+  const message = m as Message;
+  const replyData = await popReply(message.id);
+  if (!replyData) return;
+  const { replyId, channelId } = replyData;
+
+  try {
+    const channel = await client.channels.fetch(channelId);
+    if (!channel?.isTextBased()) return;
+
+    const botMsg = await channel.messages.fetch(replyId);
+    if (botMsg) await botMsg.delete();
+    await deleteReply(message.id);
+  } catch (err) {
+    console.error(`Failed to delete message:`, err);
+  }
+});
 
 // === Login ===
 client.login(token);
