@@ -1,0 +1,76 @@
+import { Tweet, TweetAuthor, TweetMetrics, TweetMedia } from "@/core/models/Tweet";
+
+export const createMockTweetAuthor = (overrides?: Partial<TweetAuthor>): TweetAuthor => ({
+  id: "test_user",
+  name: "Test User(@test_user)",
+  url: "https://x.com/test_user",
+  iconUrl: "https://example.com/icon.jpg",
+  ...overrides,
+});
+
+export const createMockTweetMetrics = (overrides?: Partial<TweetMetrics>): TweetMetrics => ({
+  replies: 10,
+  likes: 100,
+  retweets: 50,
+  ...overrides,
+});
+
+export const createMockTweetMedia = (overrides?: Partial<TweetMedia>): TweetMedia => ({
+  url: "https://example.com/video.mp4",
+  thumbnailUrl: "https://example.com/thumb.jpg",
+  type: "video",
+  ...overrides,
+});
+
+export const createMockTweet = (overrides?: Partial<Tweet>): Tweet => ({
+  url: "https://x.com/test_user/status/123456789",
+  author: createMockTweetAuthor(),
+  text: "This is a test tweet",
+  metrics: createMockTweetMetrics(),
+  media: [],
+  timestamp: new Date("2024-01-01T00:00:00Z"),
+  ...overrides,
+});
+
+// 動画付きツイート
+export const MOCK_TWEET_WITH_VIDEO: Tweet = createMockTweet({
+  media: [
+    createMockTweetMedia({
+      url: "https://example.com/video.mp4",
+      thumbnailUrl: "https://example.com/thumb.jpg",
+      type: "video",
+    }),
+  ],
+});
+
+// 画像付きツイート
+export const MOCK_TWEET_WITH_PHOTO: Tweet = createMockTweet({
+  media: [
+    createMockTweetMedia({
+      url: "https://example.com/photo.jpg",
+      thumbnailUrl: "https://example.com/photo.jpg",
+      type: "photo",
+    }),
+  ],
+});
+
+// 引用ツイート
+export const MOCK_TWEET_WITH_QUOTE: Tweet = createMockTweet({
+  text: "Check this out!",
+  quote: createMockTweet({
+    author: createMockTweetAuthor({
+      id: "quoted_user",
+      name: "Quoted User(@quoted_user)",
+    }),
+    text: "Original tweet",
+  }),
+});
+
+// 複数メディア付きツイート
+export const MOCK_TWEET_WITH_MULTIPLE_MEDIA: Tweet = createMockTweet({
+  media: [
+    createMockTweetMedia({ type: "photo", url: "https://example.com/photo1.jpg" }),
+    createMockTweetMedia({ type: "photo", url: "https://example.com/photo2.jpg" }),
+    createMockTweetMedia({ type: "video", url: "https://example.com/video.mp4" }),
+  ],
+});
