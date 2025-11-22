@@ -4,11 +4,6 @@ on:
   pull_request:
     branches: ["develop", "feature/**"]
 
-# 同じコミットで複数のワークフローが実行されるのを防ぐ
-concurrency:
-  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
-  cancel-in-progress: true
-
 jobs:
   test:
     runs-on: ubuntu-latest
