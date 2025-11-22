@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.13.3](https://github.com/t1nyb0x/discord-twitter-embed-rx/compare/v1.13.2...v1.13.3) (2025-11-22)
+
+
+### Bug Fixes
+
+* trigger release-please ([6ae1064](https://github.com/t1nyb0x/discord-twitter-embed-rx/commit/6ae1064fa77edc12732e1b24a717f8c67d399841))
+
 ## [1.13.2](https://github.com/t1nyb0x/discord-twitter-embed-rx/compare/v1.13.1...v1.13.2) (2025-11-01)
 
 
