@@ -5,8 +5,8 @@ import { TwitterAdapter } from "@/adapters/twitter/TwitterAdapter";
 describe("Twitter API統合テスト", () => {
   const adapter = TwitterAdapter.createDefault();
 
-  // 実際のAPIを呼び出すため、タイムアウトを長めに設定
-  const TIMEOUT = 15000;
+  // CI環境では外部APIへのアクセスが遅い可能性があるため、タイムアウトを長めに設定
+  const TIMEOUT = process.env.CI === "true" ? 30000 : 15000;
 
   describe("VxTwitter/FxTwitter API", () => {
     it(
