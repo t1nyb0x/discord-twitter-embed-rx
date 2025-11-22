@@ -30,13 +30,7 @@ export class FxTwitterAdapter extends BaseTwitterAdapter implements ITwitterAdap
 
       return this.convertToTweet(response.tweet);
     } catch (error) {
-      // データ変換エラー（不正なデータ構造など）
-      if (process.env.NODE_ENV !== "test") {
-        console.error(
-          "[FxTwitterAdapter] Failed to convert tweet data:",
-          error instanceof Error ? error.message : String(error)
-        );
-      }
+      console.error("FxTwitterAdapter: Failed to fetch tweet", error);
       return undefined;
     }
   }

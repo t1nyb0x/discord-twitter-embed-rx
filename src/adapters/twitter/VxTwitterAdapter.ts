@@ -30,13 +30,7 @@ export class VxTwitterAdapter extends BaseTwitterAdapter implements ITwitterAdap
 
       return this.convertToTweet(data);
     } catch (error) {
-      // データ変換エラー（不正なデータ構造など）
-      if (process.env.NODE_ENV !== "test") {
-        console.error(
-          "[VxTwitterAdapter] Failed to convert tweet data:",
-          error instanceof Error ? error.message : String(error)
-        );
-      }
+      console.error("VxTwitterAdapter: Failed to fetch tweet", error);
       return undefined;
     }
   }

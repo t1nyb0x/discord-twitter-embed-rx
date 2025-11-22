@@ -30,13 +30,7 @@ export class MediaHandler {
           const size = await this.fileSizeChecker.getFileSize(item.url);
           return { media: item, size, error: null };
         } catch (error) {
-          // ファイルサイズ取得エラーは大きすぎるファイルとして扱う
-          if (process.env.NODE_ENV !== "test") {
-            console.warn(
-              `[MediaHandler] Failed to get file size for ${item.url}:`,
-              error instanceof Error ? error.message : String(error)
-            );
-          }
+          console.error(`Error checking file size for ${item.url}:`, error);
           return { media: item, size: Infinity, error };
         }
       })
