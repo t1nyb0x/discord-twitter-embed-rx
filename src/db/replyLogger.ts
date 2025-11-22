@@ -1,8 +1,14 @@
 import { redis } from "./init";
 
-interface ReplyInfo {
+export interface ReplyInfo {
   replyId: string;
   channelId: string;
+}
+
+export interface IReplyLogger {
+  logReply(origMsgId: string, info: ReplyInfo): Promise<void>;
+  popReply(origMsgId: string): Promise<ReplyInfo | null>;
+  deleteReply(origMsgId: string): Promise<void>;
 }
 
 const TTL = process.env.REDIS_TTL ? parseInt(process.env.REDIS_TTL) : 60 * 60 * 24; // 1 day in seconds
