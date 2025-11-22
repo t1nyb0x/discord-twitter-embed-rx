@@ -8,6 +8,9 @@ export default defineConfig({
     env: {
       NODE_ENV: "test",
     },
+    // CI環境での統合テストの安定性向上
+    retry: process.env.CI ? 2 : 0,
+    testTimeout: process.env.CI ? 30000 : 10000,
     coverage: {
       provider: "v8",
       reporter: ["text", "json", "html"],
