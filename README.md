@@ -1,5 +1,8 @@
 # replyvxtwitter
 
+[![CI](https://github.com/t1nyb0x/discord-twitter-embed-rx/actions/workflows/ci.yml/badge.svg)](https://github.com/t1nyb0x/discord-twitter-embed-rx/actions/workflows/ci.yml)
+[![codecov](https://codecov.io/gh/t1nyb0x/discord-twitter-embed-rx/branch/main/graph/badge.svg)](https://codecov.io/gh/t1nyb0x/discord-twitter-embed-rx)
+
 ## これは何
 
 Twitter（X）の投稿URLをDiscord上に発信すると、[vxTwitter](https://github.com/dylanpdx/BetterTwitFix)のAPIから内容を取得し、Discord上に展開します。
