@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.13.4](https://github.com/t1nyb0x/discord-twitter-embed-rx/compare/v1.13.3...v1.13.4) (2025-12-15)
+
+
+### Bug Fixes
+
+* vxtwitterリクエストエラー時のフォールバック対応実装 ([fe9c6ba](https://github.com/t1nyb0x/discord-twitter-embed-rx/commit/fe9c6bab5701f99946dcc33f4a7ca214d1be0c5a))
+* vxtwitterリクエストエラー時のフォールバック対応実装 ([acd1356](https://github.com/t1nyb0x/discord-twitter-embed-rx/commit/acd13563067dfd983bddbedb09108b1cb51f714b))
+
 ## [1.13.3](https://github.com/t1nyb0x/discord-twitter-embed-rx/compare/v1.13.2...v1.13.3) (2025-11-22)
 
 
