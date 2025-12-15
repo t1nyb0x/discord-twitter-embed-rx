@@ -1,6 +1,6 @@
 import { BaseTwitterAdapter, ITwitterAdapter } from "./BaseTwitterAdapter";
 import { Tweet, TweetMedia } from "@/core/models/Tweet";
-import { VxTwitterApi } from "@/vxtwitter/api";
+import { VxTwitterApi, VxTwitterServerError } from "@/vxtwitter/api";
 import { VxTwitter } from "@/vxtwitter/vxtwitter";
 
 /**
@@ -30,6 +30,11 @@ export class VxTwitterAdapter extends BaseTwitterAdapter implements ITwitterAdap
 
       return this.convertToTweet(data);
     } catch (error) {
+      // 500エラーの場合は上位でフォールバック処理させるため再スロー
+      if (error instanceof VxTwitterServerError) {
+        console.warn(`VxTwitterAdapter: Server error (${error.status}), will try fallback`);
+        throw error;
+      }
       console.error("VxTwitterAdapter: Failed to fetch tweet", error);
       return undefined;
     }
