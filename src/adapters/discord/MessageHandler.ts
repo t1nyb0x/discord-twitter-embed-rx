@@ -195,19 +195,75 @@ export class MessageHandler {
       if (!interaction.isButton()) return;
       if (interaction.customId !== `reveal_spoiler_${message.id}`) return;
 
-      await interaction.deferUpdate();
+      // エフェメラルで応答を遅延（動画ダウンロード中の待機用）
+      await interaction.deferReply({ ephemeral: true });
 
-      // メディアURLを収集（動画・画像両方）
-      const mediaUrls = tweet.media.map((m) => m.url);
-      const mediaContent = mediaUrls.length > 0 ? mediaUrls.join("\n") : "";
+      try {
+        // 動画をダウンロードしてエフェメラルで送信
+        const attachments = await this.downloadMediaForSpoiler(tweet);
 
-      await interaction.followUp({
-        content: mediaContent,
-        embeds,
-        ephemeral: true,
-        allowedMentions: { repliedUser: false },
-      });
+        await interaction.editReply({
+          embeds,
+          files: attachments,
+          allowedMentions: { repliedUser: false },
+        });
+      } catch (error) {
+        console.error("Error revealing spoiler:", error);
+        await interaction.editReply({
+          content: "コンテンツの取得に失敗しました。",
+          embeds,
+          allowedMentions: { repliedUser: false },
+        });
+      }
     });
+  }
+
+  /**
+   * スポイラー用にメディアをダウンロードしてAttachmentBuilderを作成
+   * @param tweet ツイートデータ
+   * @returns AttachmentBuilder配列
+   */
+  private async downloadMediaForSpoiler(tweet: Tweet): Promise<AttachmentBuilder[]> {
+    const uniqueTmpDir = path.join(this.tmpDirBase, randomUUID());
+    const attachments: AttachmentBuilder[] = [];
+
+    try {
+      await this.fileManager.createDirectory(uniqueTmpDir);
+
+      // ファイルサイズでフィルタリング
+      const { downloadable, tooLarge } = await this.mediaHandler.filterBySize(tweet.media);
+
+      // ダウンロード可能な動画を処理
+      const videos = this.mediaHandler.filterVideos(downloadable);
+      await this.downloadVideos(videos, uniqueTmpDir);
+
+      // ダウンロードしたファイルからAttachmentBuilderを作成
+      const files = await this.fileManager.listFiles(uniqueTmpDir);
+      for (const file of files) {
+        const filePath = path.join(uniqueTmpDir, file);
+        attachments.push(new AttachmentBuilder(filePath, { name: file }));
+      }
+
+      // 大きすぎるファイルはURLとして追加（ダウンロードせずにURLを返す）
+      // 注意: エフェメラルではURLは直接表示されるだけ
+      const largeVideos = this.mediaHandler.filterVideos(tooLarge);
+      if (largeVideos.length > 0) {
+        console.log(`${largeVideos.length} video(s) too large, URLs will be included in embed`);
+      }
+
+      return attachments;
+    } finally {
+      // 一時ディレクトリを削除（AttachmentBuilderがファイルを読み込んだ後）
+      // 注意: discord.jsはファイルパスから直接読み込むので、送信前に削除するとエラーになる
+      // そのため、ここでは削除せず、少し待ってから削除する
+      setTimeout(async () => {
+        try {
+          await this.fileManager.removeTempDirectory(uniqueTmpDir);
+        } catch (error) {
+          console.error("Error removing temp directory:", error);
+        }
+      }, 30000); // 30秒後に削除
+    }
   }
 
   /**
