@@ -200,9 +200,14 @@ export class MessageHandler {
 
       try {
         // 動画をダウンロードしてエフェメラルで送信
-        const attachments = await this.downloadMediaForSpoiler(tweet);
+        const { attachments, largeVideoUrls } = await this.downloadMediaForSpoiler(tweet);
+
+        // 大きすぎるファイルのURLをcontentに含める
+        const content =
+          largeVideoUrls.length > 0 ? `ファイルサイズが大きいためURLで表示:\n${largeVideoUrls.join("\n")}` : undefined;
 
         await interaction.editReply({
+          content,
           embeds,
           files: attachments,
           allowedMentions: { repliedUser: false },
@@ -221,9 +226,11 @@ export class MessageHandler {
   /**
    * スポイラー用にメディアをダウンロードしてAttachmentBuilderを作成
    * @param tweet ツイートデータ
-   * @returns AttachmentBuilder配列
+   * @returns AttachmentBuilder配列と大きすぎるファイルのURL配列
    */
-  private async downloadMediaForSpoiler(tweet: Tweet): Promise<AttachmentBuilder[]> {
+  private async downloadMediaForSpoiler(
+    tweet: Tweet
+  ): Promise<{ attachments: AttachmentBuilder[]; largeVideoUrls: string[] }> {
     const uniqueTmpDir = path.join(this.tmpDirBase, randomUUID());
     const attachments: AttachmentBuilder[] = [];
 
@@ -244,14 +251,11 @@ export class MessageHandler {
         attachments.push(new AttachmentBuilder(filePath, { name: file }));
       }
 
-      // 大きすぎるファイルはURLとして追加（ダウンロードせずにURLを返す）
-      // 注意: エフェメラルではURLは直接表示されるだけ
+      // 大きすぎるファイルのURLを収集
       const largeVideos = this.mediaHandler.filterVideos(tooLarge);
-      if (largeVideos.length > 0) {
-        console.log(`${largeVideos.length} video(s) too large, URLs will be included in embed`);
-      }
+      const largeVideoUrls = largeVideos.map((v) => v.url);
 
-      return attachments;
+      return { attachments, largeVideoUrls };
     } finally {
       // 一時ディレクトリを削除（AttachmentBuilderがファイルを読み込んだ後）
       // 注意: discord.jsはファイルパスから直接読み込むので、送信前に削除するとエラーになる
