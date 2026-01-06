@@ -137,18 +137,17 @@ export class MessageHandler {
       return;
     }
 
-    // メディアがある場合は処理
-    if (tweet.media.length > 0) {
-      await this.handleMedia(message, tweet, isSpoiler);
-    }
-
     // Embedを作成
     const embeds = this.embedBuilder.build(tweet);
 
-    // スポイラーの場合はボタン付きで送信
+    // スポイラーの場合はボタン付きで送信（メディアは直接投稿しない）
     if (isSpoiler) {
-      await this.sendSpoilerMessage(client, message, embeds);
+      await this.sendSpoilerMessage(client, message, embeds, tweet);
     } else {
+      // 通常の場合のみメディアを処理
+      if (tweet.media.length > 0) {
+        await this.handleMedia(message, tweet, false);
+      }
       const replyMessage = await message.reply({
         embeds,
         allowedMentions: { repliedUser: false },
@@ -165,8 +164,14 @@ export class MessageHandler {
    * @param client Discordクライアント
    * @param message 元メッセージ
    * @param embeds Embed配列
+   * @param tweet ツイートデータ
    */
-  private async sendSpoilerMessage(client: Client, message: Message, embeds: EmbedBuilder[]): Promise<void> {
+  private async sendSpoilerMessage(
+    client: Client,
+    message: Message,
+    embeds: EmbedBuilder[],
+    tweet: Tweet
+  ): Promise<void> {
     const button = new ButtonBuilder()
       .setCustomId(`reveal_spoiler_${message.id}`)
       .setLabel("ネタバレを見る")
@@ -190,14 +195,79 @@ export class MessageHandler {
       if (!interaction.isButton()) return;
       if (interaction.customId !== `reveal_spoiler_${message.id}`) return;
 
-      await interaction.deferUpdate();
-      await interaction.followUp({
-        content: "",
-        embeds,
-        ephemeral: true,
-        allowedMentions: { repliedUser: false },
-      });
+      // エフェメラルで応答を遅延（動画ダウンロード中の待機用）
+      await interaction.deferReply({ ephemeral: true });
+
+      try {
+        // 動画をダウンロードしてエフェメラルで送信
+        const { attachments, largeVideoUrls } = await this.downloadMediaForSpoiler(tweet);
+
+        // 大きすぎるファイルのURLをcontentに含める
+        const content =
+          largeVideoUrls.length > 0 ? `ファイルサイズが大きいためURLで表示:\n${largeVideoUrls.join("\n")}` : undefined;
+
+        await interaction.editReply({
+          content,
+          embeds,
+          files: attachments,
+          allowedMentions: { repliedUser: false },
+        });
+      } catch (error) {
+        console.error("Error revealing spoiler:", error);
+        await interaction.editReply({
+          content: "コンテンツの取得に失敗しました。",
+          embeds,
+          allowedMentions: { repliedUser: false },
+        });
+      }
     });
+  }
+
+  /**
+   * スポイラー用にメディアをダウンロードしてAttachmentBuilderを作成
+   * @param tweet ツイートデータ
+   * @returns AttachmentBuilder配列と大きすぎるファイルのURL配列
+   */
+  private async downloadMediaForSpoiler(
+    tweet: Tweet
+  ): Promise<{ attachments: AttachmentBuilder[]; largeVideoUrls: string[] }> {
+    const uniqueTmpDir = path.join(this.tmpDirBase, randomUUID());
+    const attachments: AttachmentBuilder[] = [];
+
+    try {
+      await this.fileManager.createDirectory(uniqueTmpDir);
+
+      // ファイルサイズでフィルタリング
+      const { downloadable, tooLarge } = await this.mediaHandler.filterBySize(tweet.media);
+
+      // ダウンロード可能な動画を処理
+      const videos = this.mediaHandler.filterVideos(downloadable);
+      await this.downloadVideos(videos, uniqueTmpDir);
+
+      // ダウンロードしたファイルからAttachmentBuilderを作成
+      const files = await this.fileManager.listFiles(uniqueTmpDir);
+      for (const file of files) {
+        const filePath = path.join(uniqueTmpDir, file);
+        attachments.push(new AttachmentBuilder(filePath, { name: file }));
+      }
+
+      // 大きすぎるファイルのURLを収集
+      const largeVideos = this.mediaHandler.filterVideos(tooLarge);
+      const largeVideoUrls = largeVideos.map((v) => v.url);
+
+      return { attachments, largeVideoUrls };
+    } finally {
+      // 一時ディレクトリを削除（AttachmentBuilderがファイルを読み込んだ後）
+      // 注意: discord.jsはファイルパスから直接読み込むので、送信前に削除するとエラーになる
+      // そのため、ここでは削除せず、少し待ってから削除する
+      setTimeout(async () => {
+        try {
+          await this.fileManager.removeTempDirectory(uniqueTmpDir);
+        } catch (error) {
+          console.error("Error removing temp directory:", error);
+        }
+      }, 30000); // 30秒後に削除
+    }
   }
 
   /**
