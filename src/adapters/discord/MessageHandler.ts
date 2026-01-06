@@ -137,18 +137,17 @@ export class MessageHandler {
       return;
     }
 
-    // メディアがある場合は処理
-    if (tweet.media.length > 0) {
-      await this.handleMedia(message, tweet, isSpoiler);
-    }
-
     // Embedを作成
     const embeds = this.embedBuilder.build(tweet);
 
-    // スポイラーの場合はボタン付きで送信
+    // スポイラーの場合はボタン付きで送信（メディアは直接投稿しない）
     if (isSpoiler) {
-      await this.sendSpoilerMessage(client, message, embeds);
+      await this.sendSpoilerMessage(client, message, embeds, tweet);
     } else {
+      // 通常の場合のみメディアを処理
+      if (tweet.media.length > 0) {
+        await this.handleMedia(message, tweet, false);
+      }
       const replyMessage = await message.reply({
         embeds,
         allowedMentions: { repliedUser: false },
@@ -165,8 +164,14 @@ export class MessageHandler {
    * @param client Discordクライアント
    * @param message 元メッセージ
    * @param embeds Embed配列
+   * @param tweet ツイートデータ
    */
-  private async sendSpoilerMessage(client: Client, message: Message, embeds: EmbedBuilder[]): Promise<void> {
+  private async sendSpoilerMessage(
+    client: Client,
+    message: Message,
+    embeds: EmbedBuilder[],
+    tweet: Tweet
+  ): Promise<void> {
     const button = new ButtonBuilder()
       .setCustomId(`reveal_spoiler_${message.id}`)
       .setLabel("ネタバレを見る")
@@ -191,8 +196,13 @@ export class MessageHandler {
       if (interaction.customId !== `reveal_spoiler_${message.id}`) return;
 
       await interaction.deferUpdate();
+
+      // メディアURLを収集（動画・画像両方）
+      const mediaUrls = tweet.media.map((m) => m.url);
+      const mediaContent = mediaUrls.length > 0 ? mediaUrls.join("\n") : "";
+
       await interaction.followUp({
-        content: "",
+        content: mediaContent,
         embeds,
         ephemeral: true,
         allowedMentions: { repliedUser: false },
