@@ -1,5 +1,18 @@
 # Changelog
 
+## [1.14.0](https://github.com/t1nyb0x/discord-twitter-embed-rx/compare/v1.13.4...v1.14.0) (2026-01-06)
+
+
+### Features
+
+* SPOILER時動画投稿・URL投稿をしないように ([9a36404](https://github.com/t1nyb0x/discord-twitter-embed-rx/commit/9a3640422285b9e147c01b8235bc8f75dc7877e9))
+
+
+### Bug Fixes
+
+* エフェメラルで動画URLを出すように変更 ([b17fcaf](https://github.com/t1nyb0x/discord-twitter-embed-rx/commit/b17fcaf7e99a1fc77840df2da230004479dba339))
+* エフェメラルに動画を表示するように ([8cff910](https://github.com/t1nyb0x/discord-twitter-embed-rx/commit/8cff91086239fc07a7d05eabe8806ba75dc3317f))
+
 ## [1.13.4](https://github.com/t1nyb0x/discord-twitter-embed-rx/compare/v1.13.3...v1.13.4) (2025-12-15)
 
 
