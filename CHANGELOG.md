@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.14.1](https://github.com/t1nyb0x/discord-twitter-embed-rx/compare/v1.14.0...v1.14.1) (2026-01-07)
+
+
+### Bug Fixes
+
+* 投稿URL削除時Bot側で投稿したメディアURL投稿を含めて削除するように修正 ([bed3dc2](https://github.com/t1nyb0x/discord-twitter-embed-rx/commit/bed3dc2db27776d85d429f82752ab9028646df3d))
+* 投稿URL削除時Bot側で投稿したものをメディア投稿を含めて消すように。 ([6bf9590](https://github.com/t1nyb0x/discord-twitter-embed-rx/commit/6bf95903a193bccefacd88eaaf90b19a9eecfdf0))
+
 ## [1.14.0](https://github.com/t1nyb0x/discord-twitter-embed-rx/compare/v1.13.4...v1.14.0) (2026-01-06)
 
 
