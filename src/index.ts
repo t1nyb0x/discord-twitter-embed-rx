@@ -120,14 +120,21 @@ client.on("messageDelete", async (m) => {
   const message = m as Message;
   const replyData = await popReply(message.id);
   if (!replyData) return;
-  const { replyId, channelId } = replyData;
+  const { replyIds, channelId } = replyData;
 
   try {
     const channel = await client.channels.fetch(channelId);
     if (!channel?.isTextBased()) return;
 
-    const botMsg = await channel.messages.fetch(replyId);
-    if (botMsg) await botMsg.delete();
+    // 全ての関連メッセージを削除
+    for (const replyId of replyIds) {
+      try {
+        const botMsg = await channel.messages.fetch(replyId);
+        if (botMsg) await botMsg.delete();
+      } catch (err) {
+        console.error(`Failed to delete message ${replyId}:`, err);
+      }
+    }
     await deleteReply(message.id);
   } catch (err) {
     console.error(`Failed to delete message:`, err);

@@ -107,7 +107,7 @@ export class MessageHandler {
           allowedMentions: { repliedUser: false },
         });
         await this.replyLogger.logReply(message.id, {
-          replyId: replyMessage.id,
+          replyIds: [replyMessage.id],
           channelId: message.channelId,
         });
       }
@@ -131,7 +131,7 @@ export class MessageHandler {
         allowedMentions: { repliedUser: false },
       });
       await this.replyLogger.logReply(message.id, {
-        replyId: replyMessage.id,
+        replyIds: [replyMessage.id],
         channelId: message.channelId,
       });
       return;
@@ -145,15 +145,19 @@ export class MessageHandler {
       await this.sendSpoilerMessage(client, message, embeds, tweet);
     } else {
       // 通常の場合のみメディアを処理
+      const mediaMessageIds: string[] = [];
       if (tweet.media.length > 0) {
-        await this.handleMedia(message, tweet, false);
+        const mediaId = await this.handleMedia(message, tweet, false);
+        if (mediaId) {
+          mediaMessageIds.push(mediaId);
+        }
       }
       const replyMessage = await message.reply({
         embeds,
         allowedMentions: { repliedUser: false },
       });
       await this.replyLogger.logReply(message.id, {
-        replyId: replyMessage.id,
+        replyIds: [replyMessage.id, ...mediaMessageIds],
         channelId: message.channelId,
       });
     }
@@ -186,7 +190,7 @@ export class MessageHandler {
     });
 
     await this.replyLogger.logReply(message.id, {
-      replyId: replyMessage.id,
+      replyIds: [replyMessage.id],
       channelId: message.channelId,
     });
 
@@ -275,8 +279,9 @@ export class MessageHandler {
    * @param message 元メッセージ
    * @param tweet ツイートデータ
    * @param isSpoiler スポイラーかどうか
+   * @returns 送信したメディアメッセージのID（送信しなかった場合はnull）
    */
-  private async handleMedia(message: Message, tweet: Tweet, isSpoiler: boolean): Promise<void> {
+  private async handleMedia(message: Message, tweet: Tweet, isSpoiler: boolean): Promise<string | null> {
     const uniqueTmpDir = path.join(this.tmpDirBase, randomUUID());
 
     try {
@@ -292,8 +297,9 @@ export class MessageHandler {
 
       // ダウンロードしたファイルを送信
       const files = await this.fileManager.listFiles(uniqueTmpDir);
+      let mediaMessageId: string | null = null;
       if (files.length > 0) {
-        await this.sendMediaAttachments(message, uniqueTmpDir, files, isSpoiler);
+        mediaMessageId = await this.sendMediaAttachments(message, uniqueTmpDir, files, isSpoiler);
       }
 
       // 大きすぎるファイルはURLを送信
@@ -303,11 +309,14 @@ export class MessageHandler {
           await message.channel.send(video.url);
         }
       }
+
+      return mediaMessageId;
     } catch (error) {
       console.error("Error handling media:", error);
       if (message.channel.type === ChannelType.GuildText) {
         await message.channel.send("ファイルの送信に失敗しました");
       }
+      return null;
     } finally {
       // 一時ディレクトリを削除
       await this.fileManager.removeTempDirectory(uniqueTmpDir);
@@ -340,14 +349,15 @@ export class MessageHandler {
    * @param dir ディレクトリパス
    * @param files ファイル名配列
    * @param isSpoiler スポイラーかどうか
+   * @returns 送信したメッセージID
    */
   private async sendMediaAttachments(
     message: Message,
     dir: string,
     files: string[],
     isSpoiler: boolean
-  ): Promise<void> {
-    if (files.length === 0) return;
+  ): Promise<string | null> {
+    if (files.length === 0) return null;
 
     const attachments = files.map((file) => {
       const filePath = path.join(dir, file);
@@ -356,7 +366,9 @@ export class MessageHandler {
     });
 
     if (message.channel.type === ChannelType.GuildText) {
-      await message.channel.send({ files: attachments });
+      const sentMessage = await message.channel.send({ files: attachments });
+      return sentMessage.id;
     }
+    return null;
   }
 }
