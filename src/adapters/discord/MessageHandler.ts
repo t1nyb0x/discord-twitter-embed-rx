@@ -145,12 +145,9 @@ export class MessageHandler {
       await this.sendSpoilerMessage(client, message, embeds, tweet);
     } else {
       // 通常の場合のみメディアを処理
-      const mediaMessageIds: string[] = [];
+      let mediaMessageIds: string[] = [];
       if (tweet.media.length > 0) {
-        const mediaId = await this.handleMedia(message, tweet, false);
-        if (mediaId) {
-          mediaMessageIds.push(mediaId);
-        }
+        mediaMessageIds = await this.handleMedia(message, tweet, false);
       }
       const replyMessage = await message.reply({
         embeds,
@@ -279,10 +276,11 @@ export class MessageHandler {
    * @param message 元メッセージ
    * @param tweet ツイートデータ
    * @param isSpoiler スポイラーかどうか
-   * @returns 送信したメディアメッセージのID（送信しなかった場合はnull）
+   * @returns 送信したメディアメッセージのID配列
    */
-  private async handleMedia(message: Message, tweet: Tweet, isSpoiler: boolean): Promise<string | null> {
+  private async handleMedia(message: Message, tweet: Tweet, isSpoiler: boolean): Promise<string[]> {
     const uniqueTmpDir = path.join(this.tmpDirBase, randomUUID());
+    const messageIds: string[] = [];
 
     try {
       // 一時ディレクトリを作成（ユニークなパスで）
@@ -297,26 +295,29 @@ export class MessageHandler {
 
       // ダウンロードしたファイルを送信
       const files = await this.fileManager.listFiles(uniqueTmpDir);
-      let mediaMessageId: string | null = null;
       if (files.length > 0) {
-        mediaMessageId = await this.sendMediaAttachments(message, uniqueTmpDir, files, isSpoiler);
+        const mediaMessageId = await this.sendMediaAttachments(message, uniqueTmpDir, files, isSpoiler);
+        if (mediaMessageId) {
+          messageIds.push(mediaMessageId);
+        }
       }
 
       // 大きすぎるファイルはURLを送信
       const largeVideos = this.mediaHandler.filterVideos(tooLarge);
       for (const video of largeVideos) {
         if (message.channel.type === ChannelType.GuildText) {
-          await message.channel.send(video.url);
+          const urlMessage = await message.channel.send(video.url);
+          messageIds.push(urlMessage.id);
         }
       }
 
-      return mediaMessageId;
+      return messageIds;
     } catch (error) {
       console.error("Error handling media:", error);
       if (message.channel.type === ChannelType.GuildText) {
         await message.channel.send("ファイルの送信に失敗しました");
       }
-      return null;
+      return messageIds;
     } finally {
       // 一時ディレクトリを削除
       await this.fileManager.removeTempDirectory(uniqueTmpDir);
