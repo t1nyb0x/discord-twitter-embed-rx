@@ -17,6 +17,14 @@ export class RedisReplyLogger implements IReplyLogger {
     });
   }
 
+  async addReply(origMsgId: string, replyId: string): Promise<void> {
+    const existing = await this.popReply(origMsgId);
+    if (existing) {
+      existing.replyIds.push(replyId);
+      await this.logReply(origMsgId, existing);
+    }
+  }
+
   async popReply(origMsgId: string): Promise<ReplyInfo | null> {
     try {
       const json = await redis.get(`replymap:${origMsgId}`);
