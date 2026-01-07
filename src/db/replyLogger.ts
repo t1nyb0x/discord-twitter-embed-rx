@@ -1,12 +1,13 @@
 import { redis } from "./init";
 
 export interface ReplyInfo {
-  replyId: string;
+  replyIds: string[];
   channelId: string;
 }
 
 export interface IReplyLogger {
   logReply(origMsgId: string, info: ReplyInfo): Promise<void>;
+  addReply(origMsgId: string, replyId: string): Promise<void>;
   popReply(origMsgId: string): Promise<ReplyInfo | null>;
   deleteReply(origMsgId: string): Promise<void>;
 }
