@@ -1,13 +1,25 @@
 name: deploy
 on:
-  release:
-    types: [published]
+  workflow_run:
+    workflows: [push-image]
+    types:
+      - completed
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
+    # push-imageワークフローが成功した場合のみ実行
+    if: ${{ github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.event == 'release' }}
     steps:
       - uses: actions/checkout@v6
+
+      - name: Get release tag
+        id: get_tag
+        run: |
+          # 最新のリリースタグを取得
+          TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "latest")
+          echo "tag=${TAG}" >> $GITHUB_OUTPUT
+          echo "Using tag: ${TAG}"
 
       - name: Setup SSH
         env:
@@ -24,7 +36,7 @@ jobs:
           SSH_USER: ${{ secrets.SSH_USER }}
           VPS_HOST: ${{ secrets.VPS_HOST }}
           SSH_PORT: ${{ secrets.SSH_PORT }}
-          IMAGE_TAG: ${{ github.event.release.tag_name }}
+          IMAGE_TAG: ${{ steps.get_tag.outputs.tag }}
         run: |
           ssh -o StrictHostKeyChecking=no -i ~/.ssh/deploy_key $SSH_USER@$VPS_HOST -p $SSH_PORT \
           "cd TwitterRX && export IMAGE_TAG=${IMAGE_TAG} && docker compose pull && docker compose down && docker compose up -d"
