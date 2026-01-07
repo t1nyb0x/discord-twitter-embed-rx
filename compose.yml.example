@@ -1,7 +1,7 @@
 services:
   twitter-rx:
     container_name: TwitterEmbedRX
-    image: ghcr.io/t1nyb0x/discord-twitter-embed-rx:latest
+    image: ghcr.io/t1nyb0x/discord-twitter-embed-rx:${IMAGE_TAG:-latest}
     restart: always
     env_file:
       - .env
