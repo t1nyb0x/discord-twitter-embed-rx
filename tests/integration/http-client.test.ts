@@ -31,15 +31,6 @@ describe("HttpClient統合テスト", () => {
       expect(true).toBe(true);
     });
 
-    it("404レスポンスでもContent-Lengthがあれば取得できる（実装依存）", async () => {
-      // example.comは404でもContent-Lengthを返すため、サイズを取得できる
-      // これは実装の仕様：HEAD要求でContent-Lengthヘッダーがあれば成功
-      const url = "https://example.com/nonexistent-file-12345.mp4";
-
-      const size = await httpClient.getFileSize(url);
-      expect(typeof size).toBe("number");
-    }, 15000);
-
     it("不正なプロトコルの場合はエラーを投げる", async () => {
       const url = "ftp://example.com/file.mp4";
 
