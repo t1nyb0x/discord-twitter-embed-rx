@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.15.0](https://github.com/t1nyb0x/discord-twitter-embed-rx/compare/v1.14.1...v1.15.0) (2026-01-09)
+
+
+### Features
+
+* [@screen](https://github.com/screen)_name をリンク化する処理を追加 ([f503bd8](https://github.com/t1nyb0x/discord-twitter-embed-rx/commit/f503bd8a30a12b99f132ef36a348c0741f000273))
+* [@screen](https://github.com/screen)_name をリンク化する処理を追加 ([eb590aa](https://github.com/t1nyb0x/discord-twitter-embed-rx/commit/eb590aa9fa19052e24db70c58103b407e7782637))
+
 ## [1.14.1](https://github.com/t1nyb0x/discord-twitter-embed-rx/compare/v1.14.0...v1.14.1) (2026-01-07)
 
 
