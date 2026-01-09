@@ -74,3 +74,40 @@ export const MOCK_TWEET_WITH_MULTIPLE_MEDIA: Tweet = createMockTweet({
     createMockTweetMedia({ type: "video", url: "https://example.com/video.mp4" }),
   ],
 });
+
+// @メンション付きツイート
+export const MOCK_TWEET_WITH_MENTIONS: Tweet = createMockTweet({
+  text: "Hey @user_name and @another_user, check this out!",
+});
+
+// @メンションとURL両方含むツイート
+export const MOCK_TWEET_WITH_MENTIONS_AND_URL: Tweet = createMockTweet({
+  text: "Check @twitter profile at https://x.com/@twitter and @github too!",
+});
+
+// 引用ツイートに@メンション含む
+export const MOCK_TWEET_WITH_QUOTE_AND_MENTIONS: Tweet = createMockTweet({
+  text: "Quoting @someone here",
+  quote: createMockTweet({
+    author: createMockTweetAuthor({
+      id: "quoted_user",
+      name: "Quoted User(@quoted_user)",
+    }),
+    text: "Thanks @friend for the support!",
+  }),
+});
+
+// 4096文字を超える長文ツイート
+export const MOCK_TWEET_WITH_LONG_TEXT: Tweet = createMockTweet({
+  text: "A".repeat(4100),
+});
+
+// 連続する@を含むツイート
+export const MOCK_TWEET_WITH_DOUBLE_AT: Tweet = createMockTweet({
+  text: "Check @@user and @@@test for examples",
+});
+
+// 全角@を含むツイート
+export const MOCK_TWEET_WITH_FULLWIDTH_AT: Tweet = createMockTweet({
+  text: "Hello ＠user and ＠＠test here",
+});

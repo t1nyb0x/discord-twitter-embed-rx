@@ -8,6 +8,7 @@ export class DiscordEmbedBuilder {
   private readonly embedColor = 9016025;
   private readonly quotePrefix = "QT: ";
   private readonly br = "\n";
+  private readonly maxDescriptionLength = 4096;
 
   /**
    * ツイートからDiscord Embedを作成
@@ -49,15 +50,17 @@ export class DiscordEmbedBuilder {
       .setTimestamp(tweet.timestamp);
 
     // 説明文の作成（引用ツイート情報を含む）
-    let description = tweet.text;
+    let description = this.convertMentionsToLinks(tweet.text);
     if (tweet.quote) {
-      const quoteText = this.quotePrefix + "`@" + tweet.quote.author.id + "` " + tweet.quote.text;
+      const quoteAuthorLink = `[@${tweet.quote.author.id}](https://x.com/${tweet.quote.author.id})`;
+      const quoteTextWithLinks = this.convertMentionsToLinks(tweet.quote.text);
+      const quoteText = this.quotePrefix + quoteAuthorLink + " " + quoteTextWithLinks;
       const quoteUrl = "(" + tweet.quote.url + ")";
       description += this.br + this.br + quoteText + this.br + quoteUrl;
     }
 
     if (description !== "") {
-      embed.setDescription(description);
+      embed.setDescription(this.truncateDescription(description));
     }
 
     return embed;
@@ -75,5 +78,41 @@ export class DiscordEmbedBuilder {
       name,
       value: String(count),
     };
+  }
+
+  /**
+   * ＠メンションをクリック可能なリンクに変換
+   * @param text 変換対象のテキスト
+   * @returns ＠メンションがリンク化されたテキスト
+   */
+  private convertMentionsToLinks(text: string): string {
+    // URL部分を一時的に抽出してプレースホルダーに置換
+    const urlPattern = /https?:\/\/[^\s]+/g;
+    const urls: string[] = [];
+    const textWithPlaceholders = text.replace(urlPattern, (url) => {
+      urls.push(url);
+      return `__URL_PLACEHOLDER_${urls.length - 1}__`;
+    });
+
+    // @メンションをマークダウンリンクに変換（連続する@の最後のみ変換、全角@にも対応）
+    const transformed = textWithPlaceholders.replace(
+      /([@＠]*)[@＠]([A-Za-z0-9_]{1,15})\b/g,
+      "$1[@$2](https://x.com/$2)"
+    );
+
+    // プレースホルダーを元のURLに戻す
+    return transformed.replace(/__URL_PLACEHOLDER_(\d+)__/g, (_, index) => urls[parseInt(index)]);
+  }
+
+  /**
+   * 説明文を最大長に収める（超過時は末尾を省略）
+   * @param text 説明文
+   * @returns 切り詰められた説明文
+   */
+  private truncateDescription(text: string): string {
+    if (text.length <= this.maxDescriptionLength) {
+      return text;
+    }
+    return text.substring(0, this.maxDescriptionLength - 3) + "...";
   }
 }

@@ -1,5 +1,15 @@
 import { describe, it, expect } from "vitest";
-import { createMockTweet, MOCK_TWEET_WITH_QUOTE, MOCK_TWEET_WITH_PHOTO } from "../../../fixtures/mock-tweets";
+import {
+  createMockTweet,
+  MOCK_TWEET_WITH_QUOTE,
+  MOCK_TWEET_WITH_PHOTO,
+  MOCK_TWEET_WITH_MENTIONS,
+  MOCK_TWEET_WITH_MENTIONS_AND_URL,
+  MOCK_TWEET_WITH_QUOTE_AND_MENTIONS,
+  MOCK_TWEET_WITH_LONG_TEXT,
+  MOCK_TWEET_WITH_DOUBLE_AT,
+  MOCK_TWEET_WITH_FULLWIDTH_AT,
+} from "../../../fixtures/mock-tweets";
 import { DiscordEmbedBuilder } from "@/adapters/discord/EmbedBuilder";
 
 describe("DiscordEmbedBuilder", () => {
@@ -48,7 +58,7 @@ describe("DiscordEmbedBuilder", () => {
       const embedData = embed.toJSON();
 
       expect(embedData.description).toContain("QT:");
-      expect(embedData.description).toContain("@quoted_user");
+      expect(embedData.description).toContain("[@quoted_user](https://x.com/quoted_user)");
       expect(embedData.description).toContain("Original tweet");
       expect(embedData.description).toContain(MOCK_TWEET_WITH_QUOTE.quote?.url);
     });
@@ -94,6 +104,68 @@ describe("DiscordEmbedBuilder", () => {
       const embeds = builder.build(tweet);
 
       expect(embeds[0].toJSON().color).toBe(9016025);
+    });
+
+    it("@メンションがクリック可能なリンクに変換される", () => {
+      const embeds = builder.build(MOCK_TWEET_WITH_MENTIONS);
+
+      const embed = embeds[0];
+      const embedData = embed.toJSON();
+
+      expect(embedData.description).toContain("[@user_name](https://x.com/user_name)");
+      expect(embedData.description).toContain("[@another_user](https://x.com/another_user)");
+    });
+
+    it("URL内の@は変換されない", () => {
+      const embeds = builder.build(MOCK_TWEET_WITH_MENTIONS_AND_URL);
+
+      const embed = embeds[0];
+      const embedData = embed.toJSON();
+
+      expect(embedData.description).toContain("[@twitter](https://x.com/twitter)");
+      expect(embedData.description).toContain("[@github](https://x.com/github)");
+      expect(embedData.description).toContain("https://x.com/@twitter");
+    });
+
+    it("引用ツイート内の@メンションもリンク化される", () => {
+      const embeds = builder.build(MOCK_TWEET_WITH_QUOTE_AND_MENTIONS);
+
+      const embed = embeds[0];
+      const embedData = embed.toJSON();
+
+      expect(embedData.description).toContain("[@someone](https://x.com/someone)");
+      expect(embedData.description).toContain("[@quoted_user](https://x.com/quoted_user)");
+      expect(embedData.description).toContain("[@friend](https://x.com/friend)");
+    });
+
+    it("4096文字を超える説明文は省略される", () => {
+      const embeds = builder.build(MOCK_TWEET_WITH_LONG_TEXT);
+
+      const embed = embeds[0];
+      const embedData = embed.toJSON();
+
+      expect(embedData.description?.length).toBe(4096);
+      expect(embedData.description).toMatch(/\.\.\.$/);
+    });
+
+    it("連続する@の最後のみがリンク化される", () => {
+      const embeds = builder.build(MOCK_TWEET_WITH_DOUBLE_AT);
+
+      const embed = embeds[0];
+      const embedData = embed.toJSON();
+
+      expect(embedData.description).toContain("@[@user](https://x.com/user)");
+      expect(embedData.description).toContain("@@[@test](https://x.com/test)");
+    });
+
+    it("全角@もリンク化される", () => {
+      const embeds = builder.build(MOCK_TWEET_WITH_FULLWIDTH_AT);
+
+      const embed = embeds[0];
+      const embedData = embed.toJSON();
+
+      expect(embedData.description).toContain("[@user](https://x.com/user)");
+      expect(embedData.description).toContain("＠[@test](https://x.com/test)");
     });
   });
 });
