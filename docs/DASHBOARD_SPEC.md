@@ -3981,6 +3981,15 @@ openssl rand -base64 32
   - [ ] **P0: upstream 名を統一（twitterrx_dashboard_backend）**
 - [ ] .env.example 作成
   - [ ] ENCRYPTION_SALT を必須として記載
+- [ ] **P0: lucia-auth から Oslo + Arctic への移行**
+  - [ ] oslo パッケージ導入（セッション管理）
+  - [ ] arctic パッケージ導入（OAuth2 クライアント）
+  - [ ] `src/lib/auth.ts` の書き換え（Oslo Session API 利用）
+  - [ ] `src/lib/discord.ts` の書き換え（Arctic Discord Provider 利用）
+  - [ ] `src/middleware.ts` の Oslo 対応（session validation ロジック更新）
+  - [ ] 認証フローの動作確認（login → callback → logout）
+  - [ ] セッション TTL・Cookie 属性の維持確認
+  - [ ] ドキュメント更新（CHANGELOG に移行理由を記載）
 - [ ] CI/CD パイプライン更新
 - [ ] ドキュメント更新（README）
   - [ ] バックアップ手順を named volume 前提に更新
