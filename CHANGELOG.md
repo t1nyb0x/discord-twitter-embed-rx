@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.16.0](https://github.com/t1nyb0x/discord-twitter-embed-rx/compare/v1.15.0...v1.16.0) (2026-01-10)
+
+
+### Features
+
+* ロギング処理改修 ([d425902](https://github.com/t1nyb0x/discord-twitter-embed-rx/commit/d425902344b9839317db25c759c91123b5beedab))
+
 ## [1.15.0](https://github.com/t1nyb0x/discord-twitter-embed-rx/compare/v1.14.1...v1.15.0) (2026-01-09)
 
 
