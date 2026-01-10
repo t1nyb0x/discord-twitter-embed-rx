@@ -24,7 +24,7 @@ enum ApplicationMode {
 
 const ENV = process.env.NODE_ENV;
 
-const packageJson = JSON.parse(fs.readFileSync(path.join(path.dirname(ROOT_DIR), "/package.json"), "utf8"));
+const packageJson = JSON.parse(fs.readFileSync(path.join(ROOT_DIR, "package.json"), "utf8"));
 const version = packageJson.version;
 
 // === Application Mode === // Todo export to other file

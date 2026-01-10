@@ -4,19 +4,29 @@
   "description": "Shared type definitions for TwitterRX Bot and Dashboard",
   "private": true,
   "type": "module",
-  "main": "./src/index.ts",
-  "types": "./src/index.ts",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
   "exports": {
-    ".": "./src/index.ts"
+    ".": {
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    }
   },
   "files": [
-    "src"
+    "dist"
   ],
+  "scripts": {
+    "build": "tsc",
+    "clean": "rm -rf dist"
+  },
   "keywords": [
     "twitterrx",
     "discord",
     "types"
   ],
   "author": "t1nyb0x",
-  "license": "MIT"
+  "license": "MIT",
+  "devDependencies": {
+    "typescript": "^5.6.3"
+  }
 }
