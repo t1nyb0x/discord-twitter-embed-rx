@@ -1315,144 +1315,21 @@ async function cleanupOrphanedConfigs(client: Client, redis: Redis): Promise<voi
 
 ## 6. API 設計
 
+> **詳細な実装例は [DASHBOARD_API_IMPLEMENTATION.md](DASHBOARD_API_IMPLEMENTATION.md) を参照してください。**
+
 ### 6.1 共通仕様
 
-> **★ P1対応: API レスポンスヘッダーの強制（MUST）**
->
-> 全ての API エンドポイントで以下のヘッダーを強制する：
->
-> ```typescript
-> // dashboard/src/middleware/api-headers.ts
-> // ★ P1対応: 全 API レスポンスに共通ヘッダーを付与
-> export function apiMiddleware({ request }: { request: Request }): Response | undefined {
->   // API エンドポイントのみ対象
->   if (!request.url.includes('/api/')) return;
->   
->   return undefined; // 後続処理を継続
-> }
->
-> // レスポンス生成時に共通ヘッダーを付与
-> export function createApiResponse(body: unknown, status: number = 200): Response {
->   return new Response(JSON.stringify(body), {
->     status,
->     headers: {
->       'Content-Type': 'application/json',
->       'Cache-Control': 'no-store, no-cache, must-revalidate', // ★ 全 API でキャッシュ禁止
->       'X-Content-Type-Options': 'nosniff',
->     },
->   });
-> }
->
-> // エラーレスポンスにも同様のヘッダーを付与
-> export function createApiError(error: ApiError, status: number): Response {
->   return new Response(JSON.stringify({ error }), {
->     status,
->     headers: {
->       'Content-Type': 'application/json',
->       'Cache-Control': 'no-store, no-cache, must-revalidate', // ★ エラーもキャッシュ禁止
->       'X-Content-Type-Options': 'nosniff',
->     },
->   });
-> }
-> ```
->
-> **理由**:
-> - 404（BOT_NOT_JOINED_OR_OFFLINE）など recoverable なエラーがキャッシュされると復旧後もエラー表示が続く
-> - 実装漏れを防ぐため、個別エンドポイントではなく共通処理で付与
+#### レスポンスヘッダー
 
-> **★ P0: GET は純粋取得のみ（副作用禁止）**
->
-> `GET /api/guilds/{guildId}/config` は設定の取得のみを行う。
-> **設定が存在しない場合は 404 を返す**。自動作成はしない。
->
-> **設計根拠**:
-> - GET に副作用があると監査ログが汚れる
-> - Bot 未参加状態でも設定が作られる
-> - 「誰がいつ作ったのか」が曖昧になる
-> - セキュリティレビューで確実に突っ込まれる
->
-> **初期化は POST 明示操作のみ**:
-> - 設定がない場合は UI で初期化ボタンを表示
-> - ユーザーが明示的に `POST /api/guilds/{guildId}/config:initialize` を呼ぶ
->
-> **初期化 API: POST /api/guilds/{guildId}/config:initialize**
->
-> ```typescript
-> export async function POST({ params, locals }) {
->   const { guildId } = params;
->   const session = locals.session;
->   
->   // 権限チェック
->   await validateGuildAccess(guildId, session);
->   
->   // 既に存在する場合はエラー
->   const existing = await getConfig(guildId);
->   if (existing) {
->     throw new ConflictError({ code: 'CONFIG_ALREADY_EXISTS' });
->   }
->   
->   // デフォルト設定を作成（監査ログにはユーザー明示の初期化として記録）
->   const config = await createDefaultConfig(guildId, session.userId, { 
->     trigger: 'manual_initialize' 
->   });
->   
->   return new Response(JSON.stringify({ success: true, config }), { status: 201 });
-> }
-> ```
->
-> **UI: 設定未作成時の表示（MUST）**
->
-> ```tsx
-> function ConfigNotFoundView({ guildId }: { guildId: string }) {
->   const [initializing, setInitializing] = useState(false);
->   
->   const handleInitialize = async () => {
->     setInitializing(true);
->     try {
->       await fetch(`/api/guilds/${guildId}/config:initialize`, { method: 'POST' });
->       window.location.reload();
->     } finally {
->       setInitializing(false);
->     }
->   };
->   
->   return (
->     <div className="config-not-found">
->       <h2>設定が初期化されていません</h2>
->       <p>このサーバーの設定はまだ作成されていません。</p>
->       <p>「初期化」ボタンを押して設定を作成してください。</p>
->       <button onClick={handleInitialize} disabled={initializing}>
->         {initializing ? '初期化中...' : '⚙️ 設定を初期化'}
->       </button>
->     </div>
->   );
-> }
-> ```
->
-> **互換性オプション: AUTO_CREATE_CONFIG_ON_GET**
->
-> 既存ユーザーのために、従来の GET 副作用動作をオプトインで有効化できる。
->
-> | 環境変数 | デフォルト | 説明 |
-> |----------|-----------|------|
-> | `AUTO_CREATE_CONFIG_ON_GET` | `false` | `true` で GET 副作用を有効化（非推奨） |
->
-> ```typescript
-> const AUTO_CREATE_CONFIG = process.env.AUTO_CREATE_CONFIG_ON_GET === 'true';
->
-> if (!config) {
->   if (AUTO_CREATE_CONFIG) {
->     // 非推奨: 従来の後方互換用
->     console.warn('[Config] AUTO_CREATE_CONFIG_ON_GET is deprecated');
->     config = await createDefaultConfig(guildId, sessionData.userId, { trigger: 'auto_create_on_get' });
->   } else {
->     throw new NotFoundError({
->       code: 'CONFIG_NOT_FOUND',
->       message: '設定がまだ作成されていません。設定を初期化してください。',
->     });
->   }
-> }
-> ```
+全ての API エンドポイントで以下のヘッダーを返す：
+- `Content-Type: application/json`
+- `Cache-Control: no-store, no-cache, must-revalidate` ★ P1: 全APIでキャッシュ禁止
+- `X-Content-Type-Options: nosniff`
+
+#### GET の副作用禁止（P0）
+
+`GET /api/guilds/{guildId}/config` は設定の取得のみを行う。設定が存在しない場合は 404 を返す。
+初期化は `POST /api/guilds/{guildId}/config:initialize` で明示的に行う。
 
 #### エラーレスポンス形式
 
@@ -1595,7 +1472,9 @@ async function cleanupOrphanedConfigs(client: Client, redis: Redis): Promise<voi
 | `GET /api/guilds` | 30回 | 1分 / ユーザー |
 | `POST /api/auth/*` | 5回 | 1分 / IP |
 
-> **レート制限の実装方式**
+> **実装方式の詳細は [DASHBOARD_API_IMPLEMENTATION.md](DASHBOARD_API_IMPLEMENTATION.md#レート制限) を参照**
+>
+> **レート制限の基本方針**
 >
 > レート制限は **アプリケーション内 + nginx の二段構え** で実装する。
 >
@@ -1854,16 +1733,267 @@ GET /api/guilds/{guildId}/config
   "availableChannels": [
     { "id": "111111111", "name": "general", "type": 0 },
     { "id": "222222222", "name": "bot-commands", "type": 0 }
-  ],
-  "pagination": {
-    "total": 50,
-    "limit": 100,
-    "offset": 0
+  ]
+}
+```
+
+**設計のポイント**:
+- `botJoined` を先に確認（DB を汚す前に判定）
+- 設定が存在しない場合はデフォルト作成（P1: `INSERT OR IGNORE` で冪等化）
+- チャンネル一覧は Bot が Redis にキャッシュしたものを取得（TTL: 1時間）
+- ★ P0: channels キャッシュは全件保存（上限撤廃）、UI はクライアントサイド検索
+
+> **詳細な実装例は [DASHBOARD_API_IMPLEMENTATION.md](DASHBOARD_API_IMPLEMENTATION.md#ギルド設定取得) を参照**
+
+#### ギルド設定更新
+
+```
+PUT /api/guilds/{guildId}/config
+```
+
+**認可**: 要ログイン + `MANAGE_GUILD` 権限
+
+**Headers**:
+- `X-CSRF-Token: {csrfToken}` (必須)
+- `If-Match: "{version}"` (楽観的ロック、ETag 形式)
+
+**Request Body**:
+```json
+{
+  "allowAllChannels": false,
+  "whitelist": ["111111111", "222222222"]
+}
+```
+
+**バリデーション**:
+- `allowAllChannels` が `false` の場合、`whitelist` は 1件以上必須
+- `whitelist` の最大件数: 500件
+- `channelId` は数字文字列のみ（Discord Snowflake 形式）
+
+**トランザクション処理**:
+1. 監査ログ記録
+2. 既存 whitelist を削除
+3. 新しい whitelist を挿入（100件ずつバッチ処理）
+4. guild_configs を更新（★ P0: WHERE 句に version を含めて楽観ロック）
+5. Redis 更新（TTL なし）
+6. pub/sub で通知
+
+**Redis 更新**:
+- リトライ付きで Redis SET + PUBLISH を実行
+- SET 失敗時は 503 を返す（★ P0: レスポンスに現在 version を含める）
+- PUBLISH 失敗時は 200 + warning フラグ（P1対応）
+
+> **詳細な実装例は [DASHBOARD_API_IMPLEMENTATION.md](DASHBOARD_API_IMPLEMENTATION.md#ギルド設定更新) を参照**
+
+**エラー**:
+- `409`: 競合（楽観的ロック失敗）
+- `503`: Redis 障害（SQLite は更新済みの可能性あり）
+
+---
+
+## 7. 認証・認可・セキュリティ
+
+> **詳細な実装例は [DASHBOARD_AUTH_IMPLEMENTATION.md](DASHBOARD_AUTH_IMPLEMENTATION.md) を参照してください。**
+
+### 7.1 Discord OAuth2 フロー
+
+```
+1. ユーザーが /api/auth/discord/login にアクセス
+2. state を生成し Redis に保存（oauth:state:{state}, TTL: 10分）
+3. Discord 認可画面にリダイレクト
+4. ユーザーが許可
+5. /api/auth/discord/callback にコールバック
+6. state を検証（Redis から取得し、一致確認後削除）
+7. アクセストークンでユーザー情報 & ギルド一覧を取得
+8. lucia-auth でセッション作成（Redis に保存、TTL: 7日）
+9. CSRF トークン生成・保存（app:csrf:{sessionId}）
+10. Dashboard へリダイレクト
+```
+
+### 7.2 セッション管理
+
+- **保存先**: Redis（TTL: 7日）
+- **Cookie 属性**: `HttpOnly`, `Secure` (NODE_ENV=production), `SameSite=Lax`
+- **セッション延長**: なし（期限切れ時は再ログイン）
+- **refresh_token**: 使用しない（実装複雑化を避ける）
+
+### 7.3 CSRF 対策
+
+- **トークン生成**: 32バイトランダム文字列（hex）
+- **保存**: Redis `app:csrf:{sessionId}` (TTL: セッションと同期)
+- **検証**: `timingSafeEqual` で比較（★ P0: 長さチェック・形式バリデーション先行）
+- **必須ヘッダー**: `X-CSRF-Token` (POST/PUT/DELETE)
+
+### 7.4 アクセストークン暗号化
+
+- **暗号化方式**: AES-256-GCM
+- **鍵派生**: PBKDF2 (ENCRYPTION_SALT + セッションごとの salt)
+- **保存場所**: セッション内に暗号化状態で保存
+- ★ P0: ENCRYPTION_SALT は必須環境変数（未設定時は起動失敗）
+
+### 7.5 認可ロジック
+
+- **ギルド設定変更**: `MANAGE_GUILD` 権限必須
+- **権限取得**: セッション内の guilds 配列から取得（TTL: 1時間）
+- **forceRefresh**: 設定保存時は Discord API で権限を再検証
+
+---
+
+## 8. フロントエンド設計
+
+> **詳細な実装例は [DASHBOARD_FRONTEND_IMPLEMENTATION.md](DASHBOARD_FRONTEND_IMPLEMENTATION.md) を参照してください。**
+
+### 8.1 ディレクトリ構成
+
+```
+dashboard/
+├── astro.config.mjs
+├── package.json
+├── src/
+│   ├── pages/               # Astro ページ（SSG/SSR）
+│   ├── components/          # UI コンポーネント
+│   ├── layouts/             # 共通レイアウト
+│   ├── lib/                 # ライブラリ（auth, db, redis）
+│   └── middleware.ts        # 認証ミドルウェア
+└── data/
+    └── dashboard.db         # SQLite ファイル
+```
+
+### 8.2 ページ一覧
+
+| パス | レンダリング | 認証 | 説明 |
+|------|-------------|------|------|
+| `/` | SSG | 不要 | ランディングページ |
+| `/login` | SSG | 不要 | ログインボタン表示 |
+| `/dashboard` | SSR | 必要 | ギルド一覧表示 |
+| `/dashboard/{guildId}` | SSR | 必要 + 権限 | チャンネル設定 |
+
+### 8.3 UI コンポーネント
+
+- **ChannelSelector** (Preact Island): チャンネル選択 UI、クライアントサイド検索、チャンネル ID 直接指定
+- **SessionExpiryWarning** (Preact Island): セッション期限警告（24時間以内）
+- **ErrorBanner**: 各種エラー状態に応じたバナー表示
+
+---
+
+## 9. Bot 側の変更
+
+> **詳細な実装例は [DASHBOARD_BOT_IMPLEMENTATION.md](DASHBOARD_BOT_IMPLEMENTATION.md) を参照してください。**
+
+### 9.1 新規コンポーネント
+
+#### IChannelConfigRepository インターフェース
+
+```typescript
+export type ConfigResult =
+  | { kind: 'found'; data: GuildConfigData }  // 設定が存在する
+  | { kind: 'not_found' }                      // 設定が存在しない
+  | { kind: 'error'; reason: string };         // Redis障害など
+
+export interface IChannelConfigRepository {
+  getConfig(guildId: string): Promise<ConfigResult>;
+  subscribe(callback: (guildId: string, version: number) => void): void;
+  setJoined(guildId: string): Promise<void>;
+  removeJoined(guildId: string): Promise<void>;
+  cacheChannels(guildId: string, channels: ChannelInfo[]): Promise<void>;
+}
+```
+
+#### RedisChannelConfigRepository 実装
+
+- **LRU キャッシュ**: 上限 1000 ギルド、インメモリ
+- **revalidate 間隔**: 通常 5分、劣化モード時 30秒
+- **pub/sub subscribe**: config 更新通知を受信、version 比較でキャッシュ無効化
+- **劣化モード**: subscribe 切断時は 30秒間隔で Redis 確認
+- ★ P0: `fetchFromRedis` で error を明示的に返す（三値化）
+
+#### ChannelConfigService
+
+- **isChannelAllowed**: ConfigResult.kind に応じて分岐
+  - `found`: 設定に従う
+  - `not_found`: `CONFIG_NOT_FOUND_FALLBACK` に従う（デフォルト: deny）
+  - `error`: `REDIS_DOWN_FALLBACK` に従う（デフォルト: deny）
+
+### 9.2 MessageHandler への統合
+
+```typescript
+// ★ 新規追加: チャンネル許可チェック
+if (message.guildId) {
+  const isAllowed = await this.channelConfigService.isChannelAllowed(
+    message.guildId,
+    message.channelId
+  );
+  if (!isAllowed) {
+    return; // 許可されていないチャンネルでは応答しない
   }
 }
 ```
 
-**処理フロー（config 作成責任は Dashboard）**:
+### 9.3 ギルド参加/離脱イベント
+
+- `guildCreate`: `joined` フラグ + channels キャッシュ（config は作らない）
+- `guildDelete`: `joined` フラグ削除（★ P0: config は削除しない）
+- `ready`: 全参加ギルドの `joined` + channels をキャッシュ
+
+---
+
+## 10. Docker 構成
+
+> **詳細な実装例は [DASHBOARD_DEPLOYMENT.md](DASHBOARD_DEPLOYMENT.md) を参照してください。**
+
+### 10.1 compose.yml
+
+```yaml
+services:
+  twitter-rx:
+    image: ghcr.io/t1nyb0x/discord-twitter-embed-rx:latest
+    env_file: .env
+    depends_on:
+      redis:
+        condition: service_healthy
+    environment:
+      - REDIS_URL=redis://redis:6379
+
+  dashboard:
+    image: ghcr.io/t1nyb0x/discord-twitter-embed-rx-dashboard:latest
+    env_file: .env
+    depends_on:
+      redis:
+        condition: service_healthy
+    ports:
+      - "127.0.0.1:4321:4321"
+    environment:
+      - REDIS_URL=redis://redis:6379
+      - DATABASE_URL=file:/app/data/dashboard.db
+      - NODE_ENV=production
+    volumes:
+      - dashboard_data:/app/data
+
+  redis:
+    image: redis:8.2.2-alpine
+    volumes:
+      - redis_data:/data
+    command: redis-server --appendonly yes
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+
+volumes:
+  redis_data:
+  dashboard_data:
+```
+
+### 10.2 nginx 設定
+
+- **レート制限**: `/etc/nginx/conf.d/twitterrx-ratelimit.conf` で zone 定義
+- **セキュリティヘッダー**: CSP, HSTS, X-Content-Type-Options
+- **HTTPS 必須**: 本番環境では必ず HTTPS を使用（Secure Cookie 有効化のため）
+
+---
+
+## 11. データフロー
 
 ```typescript
 // Dashboard API ハンドラ
@@ -2636,6 +2766,8 @@ try {
 
 ## 7. 認証・認可・セキュリティ
 
+> **詳細な実装例は [DASHBOARD_AUTH_IMPLEMENTATION.md](DASHBOARD_AUTH_IMPLEMENTATION.md) を参照してください。**
+
 ### 7.1 Discord OAuth2 フロー
 
 ```
@@ -2648,28 +2780,22 @@ try {
 7. アクセストークンでユーザー情報 & ギルド一覧を取得
 8. lucia-auth でセッション作成（Redis に保存、TTL: 7日）
 9. CSRF トークン生成・保存（app:csrf:{sessionId}）
-10. セッション Cookie を設定してダッシュボードへリダイレクト
+10. Dashboard へリダイレクト
 ```
 
-### 7.2 Cookie 属性
+### 7.2 セッション管理
 
-```typescript
-// lucia-auth 設定
-sessionCookie: {
-  name: 'session',
-  attributes: {
-    httpOnly: true,
-    secure: process.env.NODE_ENV === 'production', // HTTPS 必須
-    sameSite: 'lax',
-    path: '/',
-    maxAge: 60 * 60 * 24 * 7, // 7日
-  },
-}
-```
+- **保存先**: Redis（TTL: 7日）
+- **Cookie 属性**: `HttpOnly`, `Secure` (NODE_ENV=production), `SameSite=Lax`
+- **セッション延長**: なし（期限切れ時は再ログイン）
+- **refresh_token**: 使用しない（実装複雑化を避ける）
 
 ### 7.3 CSRF 対策
 
-状態変更系 API（POST, PUT, DELETE）には CSRF トークンを必須とする。
+- **トークン生成**: 32バイトランダム文字列（hex）
+- **保存**: Redis `app:csrf:{sessionId}` (TTL: セッションと同期)
+- **検証**: `timingSafeEqual` で比較（★ P0: 長さチェック・形式バリデーション先行）
+- **必須ヘッダー**: `X-CSRF-Token` (POST/PUT/DELETE)
 
 #### CSRF トークンの発行
 
@@ -2747,203 +2873,13 @@ async function validateCsrfToken(sessionId: string, token: string | undefined): 
 > 2. hex 形式のバリデーション
 > 3. 長さチェックを timingSafeEqual の前に実行
 
-#### フロントエンドでの送信
+### 7.4 権限チェックとトークン管理
 
-```typescript
-// Preact コンポーネント
-const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
-
-await fetch(`/api/guilds/${guildId}/config`, {
-  method: 'PUT',
-  headers: {
-    'Content-Type': 'application/json',
-    'X-CSRF-Token': csrfToken,
-  },
-  body: JSON.stringify(data),
-});
-```
-
-### 7.4 権限チェック
-
-設定変更には Discord の `MANAGE_GUILD` (0x20) 権限が必要。
-
-```typescript
-function hasManageGuildPermission(permissions: string): boolean {
-  const MANAGE_GUILD = 0x20n;
-  return (BigInt(permissions) & MANAGE_GUILD) === MANAGE_GUILD;
-}
-```
-
-**重要**: 権限チェックは UI だけでなく、**必ず API 側でも再検証**すること。
-
-#### セッションデータの構造
-
-```typescript
-interface SessionData {
-  userId: string;
-  // ★ accessToken は暗号化して保存（後述の暗号化セクション参照）
-  encryptedAccessToken: string;  // AEAD 暗号化済み
-  expiresAt: number;    // トークン有効期限（Discordのexpires_inから計算）
-}
-
-interface CachedGuild {
-  id: string;
-  name: string;
-  icon: string | null;
-  permissions: string;
-}
-```
-
-> **重要: accessToken の保護**
->
-> accessToken が漏洩すると、そのユーザーの Discord アカウントにアクセスされるリスクがある。
-> そのため、以下の対策を必ず実装すること。
->
-> 1. **暗号化保存**: Redis には AEAD 暗号化したトークンのみを保存
-> 2. **ログ出力禁止**: `JSON.stringify(session)` などでトークンをログに出さない
-> 3. **expiresAt のソース**: Discord のレスポンスの `expires_in` を使用（推測しない）
-
-#### accessToken の暗号化
-
-> **セキュリティ考慮事項**:
-> - `ENCRYPTION_SALT` は環境変数で指定（固定値だと鍵が環境間で同一になる）
-> - GCM モードの IV は **12 bytes** が標準（NIST 推奨）
-> - `SESSION_SECRET` を変更した場合、既存セッションはすべて無効になる（再ログインが必要）
-> - 鍵ローテーション時は `SESSION_SECRET` と `ENCRYPTION_SALT` の両方を変更
-
-```typescript
-import { createCipheriv, createDecipheriv, randomBytes, scryptSync } from 'crypto';
-
-const ALGORITHM = 'aes-256-gcm';
-
-// ★ P2対応: salt は環境変数で必須指定（デフォルト値は禁止）
-// 配布版でデフォルト値を使うと全員同じ鍵派生になりセキュリティ事故になる
-const ENCRYPTION_SALT = process.env.ENCRYPTION_SALT;
-
-// ★ P2対応: 起動時チェック - 未設定なら即座にエラーで停止
-if (!ENCRYPTION_SALT || ENCRYPTION_SALT.length < 16) {
-  console.error('╔════════════════════════════════════════════════════════════╗');
-  console.error('║           ❌ ENCRYPTION_SALT NOT CONFIGURED ❌              ║');
-  console.error('╠════════════════════════════════════════════════════════════╣');
-  console.error('║ ENCRYPTION_SALT 環境変数が設定されていないか、短すぎます。 ║');
-  console.error('║ 以下のコマンドで生成してください:                          ║');
-  console.error('║   openssl rand -base64 32                                  ║');
-  console.error('║                                                            ║');
-  console.error('║ .env ファイルに追加:                                        ║');
-  console.error('║   ENCRYPTION_SALT=<生成した値>                              ║');
-  console.error('╚════════════════════════════════════════════════════════════╝');
-  process.exit(1);
-}
-
-// SESSION_SECRET から暗号化鍵を派生
-function deriveKey(secret: string): Buffer {
-  return scryptSync(secret, ENCRYPTION_SALT, 32);
-}
-
-function encryptToken(token: string, secret: string): string {
-  const key = deriveKey(secret);
-  // ★ GCM の IV は 12 bytes が標準（NIST SP 800-38D 推奈）
-  const iv = randomBytes(12);
-  const cipher = createCipheriv(ALGORITHM, key, iv);
-  const encrypted = Buffer.concat([cipher.update(token, 'utf8'), cipher.final()]);
-  const authTag = cipher.getAuthTag();
-  // iv (12) + authTag (16) + encrypted を base64 で返す
-  return Buffer.concat([iv, authTag, encrypted]).toString('base64');
-}
-
-function decryptToken(encryptedToken: string, secret: string): string {
-  const key = deriveKey(secret);
-  const data = Buffer.from(encryptedToken, 'base64');
-  // ★ IV は 12 bytes
-  const iv = data.subarray(0, 12);
-  const authTag = data.subarray(12, 28);
-  const encrypted = data.subarray(28);
-  const decipher = createDecipheriv(ALGORITHM, key, iv);
-  decipher.setAuthTag(authTag);
-  return decipher.update(encrypted) + decipher.final('utf8');
-}
-```
-
-> **運用考慮: 鍵ローテーション**:
-> 
-> `SESSION_SECRET` を変更すると既存セッションは全破棄される。
-> これは意図した動作であり、鍵漏洩時の緊急対応にも有効。
-> 
-> **ローテーション手順**:
-> 1. `.env` の `SESSION_SECRET` と `ENCRYPTION_SALT` を新しい値に変更
-> 2. Dashboard コンテナを再起動
-> 3. 既存ユーザーは全員再ログインが必要になる
-> 
-> **環境変数の追加**:
-> ```bash
-> # .env.example に追加
-> ENCRYPTION_SALT=your-unique-salt-here  # 環境ごとに異なる値を設定
-> ```
-
-#### expiresAt の計算（Discord の expires_in をソースとする）
-
-```typescript
-// OAuth2 コールバック時
-async function handleOAuthCallback(code: string): Promise<SessionData> {
-  const tokenResponse = await fetch('https://discord.com/api/oauth2/token', {
-    method: 'POST',
-    body: new URLSearchParams({
-      grant_type: 'authorization_code',
-      code,
-      redirect_uri: REDIRECT_URI,
-      client_id: CLIENT_ID,
-      client_secret: CLIENT_SECRET,
-    }),
-  });
-  
-  const tokenData = await tokenResponse.json();
-  
-  // ★ Discord のレスポンスから expires_in を取得（推測しない）
-  const expiresAt = Date.now() + (tokenData.expires_in * 1000);
-  
-  // トークンを暗号化して保存
-  const encryptedAccessToken = encryptToken(tokenData.access_token, SESSION_SECRET);
-  
-  return {
-    userId,
-    encryptedAccessToken,
-    expiresAt,
-  };
-}
-```
-
-#### 401 時のセッション破棄
-
-Discord API が 401 を返した場合は、サーバー側でセッションを破棄し、クライアントに再ログインを強制する。
-
-```typescript
-async function fetchUserGuildsWithSessionCleanup(
-  sessionId: string,
-  sessionData: SessionData
-): Promise<CachedGuild[]> {
-  const accessToken = decryptToken(sessionData.encryptedAccessToken, SESSION_SECRET);
-  
-  const response = await fetch('https://discord.com/api/users/@me/guilds', {
-    headers: { Authorization: `Bearer ${accessToken}` },
-  });
-  
-  if (response.status === 401) {
-    // ★ トークン期限切れ: セッションを破棄
-    await lucia.invalidateSession(sessionId);
-    await redis.del(`app:csrf:${sessionId}`);
-    await redis.del(`app:user:${sessionData.userId}:guilds`);
-    throw new UnauthorizedError('セッションが切れました。再ログインしてください。');
-  }
-  
-  if (!response.ok) {
-    throw new Error(`Discord API error: ${response.status}`);
-  }
-  
-  return response.json();
-}
-```
-
-#### アクセス権検証の実装
+**要点**:
+- 権限チェック: Discord の `MANAGE_GUILD` (0x20) 権限が必須
+- トークン暗号化: AES-256-GCM で `accessToken` を暗号化保存
+- セッション構造: `encryptedAccessToken`, `expiresAt` をRedis に保存
+- 401 時の処理: セッション破棄 + 関連キャッシュ削除 + UI で再ログイン促進
 
 **エラーコード設計**:
 
@@ -2953,325 +2889,44 @@ async function fetchUserGuildsWithSessionCleanup(
 | ギルドが見つからない / 権限なし | 403 | `FORBIDDEN` | アクセス権限がない |
 | Bot 未参加 | 404 | `NOT_FOUND` | リソースが存在しない（Bot がいない = 設定対象がない） |
 
-```typescript
-// API ハンドラ内
-// ★ guilds は SessionData に含めず、Redis の app:user:{userId}:guilds から取得する
-// ★ P1対応: forceRefresh オプションで設定保存時などの重要操作時に Discord API で再検証
-async function validateGuildAccess(
-  guildId: string, 
-  sessionData: SessionData,
-  options: { forceRefresh?: boolean } = {}
-): Promise<void> {
-  // 1. Redis からギルド一覧キャッシュを取得
-  const guildsJson = await redis.get(`app:user:${sessionData.userId}:guilds`);
-  let guilds: CachedGuild[] = guildsJson ? JSON.parse(guildsJson) : [];
-  let guild = guilds.find(g => g.id === guildId);
-  
-  // 2. キャッシュにない、または forceRefresh が指定された場合は Discord API で再取得
-  const shouldRefresh = !guild || options.forceRefresh;
-  if (shouldRefresh && sessionData.expiresAt > Date.now()) {
-    const accessToken = decryptToken(sessionData.encryptedAccessToken, SESSION_SECRET);
-    const freshGuilds = await fetchUserGuilds(accessToken);
-    // Redis キャッシュを更新
-    await updateSessionGuilds(sessionData.userId, freshGuilds);
-    guild = freshGuilds.find(g => g.id === guildId);
-  }
-  
-  // 3. ギルドが見つからない場合（ユーザーがそのギルドに所属していない）
-  if (!guild) {
-    throw new ForbiddenError('ギルドにアクセスする権限がありません'); // 403
-  }
-  
-  // 4. MANAGE_GUILD 権限チェック
-  if (!hasManageGuildPermission(guild.permissions)) {
-    throw new ForbiddenError('MANAGE_GUILD 権限が必要です'); // 403
-  }
-  
-  // 5. Bot が参加しているか Redis で確認
-  const joined = await redis.exists(`app:guild:${guildId}:joined`);
-  if (!joined) {
-    throw new NotFoundError('Bot がこのギルドに参加していません'); // 404
-  }
-}
+**セキュリティ考慮**:
+- `ENCRYPTION_SALT` は環境変数で必須指定（起動時チェックあり）
+- GCM モードの IV は 12 bytes（NIST 推奨）
+- `SESSION_SECRET` 変更時は既存セッションを全破棄（鍵ローテーションに対応）
+- `validateGuildAccess` に `forceRefresh` オプション（PUT時は必須、権限再検証）
 
-// ★ P1対応: PUT（設定保存）時は forceRefresh を true にして権限を再検証
-// これにより、権限が剥奪されたユーザーが古いキャッシュで設定変更することを防止
-// PUT /api/guilds/{guildId}/config ハンドラ内:
-// await validateGuildAccess(guildId, sessionData, { forceRefresh: true });
+**UX 考慮（P0: 配布版では必須）**:
+- 401 時は「セッションが切れました」バナー + 再ログインボタンを明確表示
+- セッション有効期限を UI に表示（残り24時間で警告）
+- refresh_token は使用しない（実装複雑化を避ける）
 
-// Discord API からギルド一覧を取得
-async function fetchUserGuilds(accessToken: string): Promise<CachedGuild[]> {
-  const response = await fetch('https://discord.com/api/users/@me/guilds', {
-    headers: {
-      Authorization: `Bearer ${accessToken}`,
-    },
-  });
-  
-  if (!response.ok) {
-    // トークン期限切れなど
-    throw new UnauthorizedError('再ログインが必要です');
-  }
-  
-  return response.json();
-}
-
-// セッションのギルドキャッシュを更新
-// Note: lucia-auth のセッションキーは sessionId 単位だが、
-// guilds キャッシュは userId 単位で保存（1ユーザー複数セッションでも共有）
-async function updateSessionGuilds(userId: string, guilds: CachedGuild[]): Promise<void> {
-  // ★ app: prefix を付ける（アプリケーション管轄）
-  // ★ P1対応: TTL を 7日から 1時間に短縮（権限変更への追従を早める）
-  const sessionKey = `app:user:${userId}:guilds`;
-  await redis.setex(sessionKey, 60 * 60, JSON.stringify(guilds)); // 1時間
-}
-```
-
-**トークン期限切れの扱い**:
-- Discord のアクセストークンは通常 7 日間有効（環境により変動あり）
-- 期限切れ時は `fetchUserGuilds` が 401 を返す
-- UI で「セッションが切れました。再ログインしてください」と表示
-- refresh_token は使わない（実装複雑化を避ける）
-
-> **運用上の注意**:
-> - トークン期限は Discord が制御するため、環境によって異なる可能性がある
-> - 期限切れは「起こるもの」として設計し、再ログインで復旧する前提
-> - SLO としては「トークン期限切れ時、再ログインにより即復旧」を保証
-
-> **★ P0: 配布版での UX 考慮（再ログイン導線は必須）**:
-> 
-> refresh_token を使わない場合、放置していると急に再ログイン要求が頻発する可能性がある。
-> 配布版として UX が荒れるのを避けるため、以下の対策を **P0（必須）** とする：
-> 
-> 1. **UI に「期限切れ→再ログイン」を明確に表示（P0 必須）**：
->    - 401 時は「セッションが切れました」と明確に表示し、**再ログインボタンを目立たせる**
->    - エラー時にユーザーが「何をすればいいか」を即座に理解できる UI にする
->    ```tsx
->    // 401 エラー時の UI 例（P0 必須）
->    function SessionExpiredBanner() {
->      return (
->        <div className="error-banner session-expired">
->          <p>セッションが切れました。再ログインが必要です。</p>
->          <a href="/api/auth/discord/login" className="btn btn-primary">
->            Discord でログイン
->          </a>
->        </div>
->      );
->    }
->    ```
-> 
-> 2. **401 時のセッションクリアは関連キャッシュも同時削除（P0 必須）**：
->    ```typescript
->    // 401 時はギルド一覧キャッシュも削除することを漏らさない
->    await lucia.invalidateSession(sessionId);
->    await redis.del(`app:csrf:${sessionId}`);
->    await redis.del(`app:user:${sessionData.userId}:guilds`); // ★ 必須
->    ```
-> 
-> 3. **★ P1対応: セッション有効期限の表示と期限切れ警告（MUST）**：
->    - ログイン後のダッシュボードに「セッション有効期限: ○日後」のように表示
->    - **期限が残り 24時間を切った場合は警告を表示（MUST）**
->    - 事前に期限切れを認識できることで、突然のログアウトを防止
->
->    ```tsx
->    // セッション期限警告 UI（MUST）
->    function SessionExpiryWarning({ expiresAt }: { expiresAt: number }) {
->      const now = Date.now();
->      const remaining = expiresAt - now;
->      const remainingHours = Math.floor(remaining / (1000 * 60 * 60));
->      const remainingDays = Math.floor(remaining / (1000 * 60 * 60 * 24));
->      
->      // 24時間以内なら警告
->      if (remaining < 24 * 60 * 60 * 1000 && remaining > 0) {
->        return (
->          <div className="warning-banner session-expiry">
->            <p>⚠️ セッションの有効期限が {remainingHours} 時間後に切れます。</p>
->            <a href="/api/auth/discord/login" className="btn btn-secondary">
->              今すぐ再ログイン
->            </a>
->          </div>
->        );
->      }
->      
->      // 7日以内なら表示（情報提供）
->      if (remaining > 0) {
->        return (
->          <p className="session-info">
->            セッション有効期限: {remainingDays} 日後
->          </p>
->        );
->      }
->      
->      return null;
->    }
->    ```
-> 
-> 4. **将来的な refresh_token 導入の備え（P2）**：
->    - 導入時はデータ構造（`encryptedRefreshToken` フィールド）と暗号化・ローテーション方針を先に決めておく
->    - 現状は実装しないが、設計文書で方向性を記載しておくと将来の移行がスムーズ
-```
+詳細な実装例は [DASHBOARD_AUTH_IMPLEMENTATION.md](DASHBOARD_AUTH_IMPLEMENTATION.md) を参照してくださいませ。
 
 ### 7.5 botJoined の判定方式
 
 **設計方針**: Dashboard は Bot トークンを持たない（配布時のセキュリティリスク軽減）
 
 **判定方法**:
-1. Bot がギルドに参加すると、`guildCreate` イベントで Redis に `app:guild:{guildId}:joined` キーを作成（TTL なし）
-2. Bot がギルドから離脱すると、`guildDelete` イベントでキーを削除
-3. Dashboard は Redis の `app:guild:{guildId}:joined` キーの存在で `botJoined` を判定
+1. Bot が `guildCreate` イベントで Redis に `app:guild:{guildId}:joined` キーを作成（TTL なし）
+2. Bot が `guildDelete` イベントでキーを削除
+3. Dashboard は `app:guild:{guildId}:joined` の存在で判定
 
-```typescript
-// Dashboard 側（API ハンドラ）
-async function isBotJoined(guildId: string): Promise<boolean> {
-  const exists = await redis.exists(`app:guild:${guildId}:joined`);
-  return exists === 1;
-}
-```
+**重要**:
+- Bot 離脱時に `config` は削除しない（再参加時の「全許可」復帰を防止）
+- 孤立した config は日次クリーンアップで削除（環境変数 `ORPHAN_CONFIG_RETENTION_DAYS` で設定、デフォルト30日）
 
-```typescript
-// Bot 側（src/index.ts）
-client.on('guildCreate', async (guild) => {
-  // joined フラグをセット（TTL なし）
-  await redis.set(`app:guild:${guild.id}:joined`, '1');
-  
-  // ★ config は作らない（Dashboard が作成責任を持つ）
-  
-  // チャンネル一覧をキャッシュ（fetch() で取得）
-  await cacheGuildChannels(guild);
-  
-  console.log(`[Guild] Joined: ${guild.name} (${guild.id})`);
-});
+詳細な実装例は [DASHBOARD_BOT_IMPLEMENTATION.md](DASHBOARD_BOT_IMPLEMENTATION.md) を参照してくださいませ。
 
-client.on('guildDelete', async (guild) => {
-  // joined フラグを削除
-  await redis.del(`app:guild:${guild.id}:joined`);
-  
-  // ★ P0対応: config は削除しない（Bot再参加時の「全許可」復帰を防止）
-  // 理由: Bot離脱→再参加のフローで config が消えると、
-  // Dashboard の reseed は起動時のみなので、再参加後は「未設定=全許可」になってしまう。
-  // config が Redis に残っていても容量は小さく、離脱済みギルドの設定が残るのは許容できる。
-  // 
-  // channels キャッシュは削除（古い情報を残すメリットがない）
-  await redis.del(`app:guild:${guild.id}:channels`);
-  
-  console.log(`[Guild] Left: ${guild.name} (${guild.id})`);
-});
-```
+### 7.6 チャンネル一覧のキャッシュ
 
-> **★ P0対応: Bot 離脱時に config を消さない場合のガベージコレクション（GC）方針**
->
-> config を残す方針だと「Bot が抜けたギルドの設定が永遠に残る」問題が発生する。
-> 配布版でキーが増え続けるため、GC 方針を明確化する。
->
-> **GC 方針（MUST）**:
->
-> | 対象 | 条件 | 削除タイミング |
-> |------|------|----------------|
-> | `app:guild:{id}:config` | `app:guild:{id}:joined` が N日間存在しない | Dashboard の日次クリーンアップジョブ |
->
-> **環境変数**:
->
-> | 環境変数 | 説明 | デフォルト |
-> |----------|------|-----------|
-> | `ORPHAN_CONFIG_RETENTION_DAYS` | joined がないギルドの config 保持日数 | `30` |
->
-> **実装（Dashboard 側の日次クリーンアップジョブ）**:
->
-> ```typescript
-> // dashboard/src/lib/cleanup.ts
->
-> const RETENTION_DAYS = parseInt(process.env.ORPHAN_CONFIG_RETENTION_DAYS || '30', 10);
-> const CLEANUP_INTERVAL = 24 * 60 * 60 * 1000; // 24時間
->
-> // ★ config に lastSeenJoined フィールドを追加して追跡
-> // または、別途 app:guild:{id}:config:orphaned_at キーで追跡
->
-> async function cleanupOrphanedConfigs(): Promise<void> {
->   if (RETENTION_DAYS === 0) {
->     console.log('[Cleanup] Orphan config cleanup is disabled (RETENTION_DAYS=0)');
->     return;
->   }
->   
->   const startTime = Date.now();
->   let scannedCount = 0;
->   let cleanedCount = 0;
->   
->   // 1. config キーを SCAN で取得
->   let cursor = '0';
->   do {
->     const [nextCursor, keys] = await redis.scan(cursor, 'MATCH', 'app:guild:*:config', 'COUNT', 100);
->     cursor = nextCursor;
->     
->     for (const configKey of keys) {
->       scannedCount++;
->       const guildId = configKey.split(':')[2]; // app:guild:{id}:config
->       
->       // 2. joined キーが存在するか確認
->       const joinedExists = await redis.exists(`app:guild:${guildId}:joined`);
->       
->       if (joinedExists) {
->         // joined があれば orphaned_at をクリア
->         await redis.del(`app:guild:${guildId}:config:orphaned_at`);
->         continue;
->       }
->       
->       // 3. joined がない場合、orphaned_at を確認/設定
->       const orphanedAtStr = await redis.get(`app:guild:${guildId}:config:orphaned_at`);
->       
->       if (!orphanedAtStr) {
->         // 初回検出: orphaned_at を設定
->         await redis.set(`app:guild:${guildId}:config:orphaned_at`, Date.now().toString());
->         console.log(`[Cleanup] Marked config as orphaned: ${guildId}`);
->         continue;
->       }
->       
->       // 4. orphaned_at が RETENTION_DAYS を超えているか確認
->       const orphanedAt = parseInt(orphanedAtStr, 10);
->       const daysSinceOrphaned = (Date.now() - orphanedAt) / (1000 * 60 * 60 * 24);
->       
->       if (daysSinceOrphaned >= RETENTION_DAYS) {
->         // 保持期間を超えた → 削除
->         await redis.del(`app:guild:${guildId}:config`);
->         await redis.del(`app:guild:${guildId}:config:orphaned_at`);
->         cleanedCount++;
->         console.log(`[Cleanup] Deleted orphaned config: ${guildId} (orphaned ${Math.floor(daysSinceOrphaned)} days ago)`);
->       }
->     }
->   } while (cursor !== '0');
->   
->   const elapsed = Date.now() - startTime;
->   console.log(`[Cleanup] Scanned ${scannedCount} configs, cleaned ${cleanedCount} in ${elapsed}ms`);
-> }
->
-> // Dashboard 起動時 + 日次で実行
-> setInterval(cleanupOrphanedConfigs, CLEANUP_INTERVAL);
-> cleanupOrphanedConfigs(); // 起動時にも実行
-> ```
->
-> **SQLite 側の config も同様に掃除**:
->
-> ```typescript
-> // SQLite の孤立 config も掃除（Dashboard 側）
-> async function cleanupOrphanedSQLiteConfigs(): Promise<void> {
->   // Redis の joined キーが存在しない guild_id を持つ config を特定
->   const configs = await db.select().from(guildConfigs);
->   
->   for (const config of configs) {
->     const joinedExists = await redis.exists(`app:guild:${config.guildId}:joined`);
->     if (!joinedExists) {
->       // orphaned_at を確認...（上記と同様のロジック）
->     }
->   }
-> }
-> ```
->
-> **仕様サマリ**:
-> - Bot 離脱時に config は削除しない（再参加時の全許可復帰を防止）
-> - joined が N日間（デフォルト30日）存在しない config は自動削除
-> - Bot が再参加すれば orphaned_at はクリアされ、config は保持される
+Dashboard は Bot トークンを持たないため、Bot がチャンネル一覧を Redis にキャッシュして提供します。
 
-### 7.6 チャンネル一覧のキャッシュ（Bot 側）
+**キャッシュ仕様**:
+- キー: `app:guild:{guildId}:channels`
+- TTL: 1時間
+- 更新タイミング: `guildCreate`、`channelCreate`、`channelDelete` イベント
 
-Dashboard は Bot トークンを持たないため、Bot がチャンネル一覧を Redis にキャッシュして提供する。
+詳細な実装例は [DASHBOARD_BOT_IMPLEMENTATION.md](DASHBOARD_BOT_IMPLEMENTATION.md) を参照してくださいませ。
 
 **レート制限対策**: チャンネル変更イベントが連続すると Discord API を連打してしまうため、
 **ギルド単位で debounce（30秒）** を適用する。
@@ -3422,48 +3077,35 @@ export const lucia = new Lucia(adapter, {
 
 ## 8. フロントエンド設計
 
-### 8.1 ディレクトリ構成
+### 8.1 技術スタック
+
+- **フレームワーク**: Astro SSR + Preact Islands
+- **認証**: lucia-auth（Redis セッション）
+- **データベース**: SQLite + Drizzle ORM
+
+### 8.2 ディレクトリ構成
 
 ```
 dashboard/
-├── astro.config.mjs
-├── package.json
 ├── src/
-│   ├── pages/
-│   │   ├── index.astro              # ランディングページ
-│   │   ├── login.astro              # ログインページ
+│   ├── pages/               # ページ定義（SSR/SSG）
+│   │   ├── index.astro
+│   │   ├── login.astro
 │   │   ├── dashboard/
-│   │   │   ├── index.astro          # ギルド一覧
-│   │   │   └── [guildId].astro      # ギルド設定ページ
-│   │   └── api/
-│   │       ├── auth/
-│   │       │   ├── discord/
-│   │       │   │   ├── login.ts
-│   │       │   │   └── callback.ts
-│   │       │   └── logout.ts
-│   │       └── guilds/
-│   │           ├── index.ts
-│   │           └── [guildId]/
-│   │               └── config.ts
-│   ├── components/
-│   │   ├── Header.astro             # 共通ヘッダー
-│   │   ├── GuildCard.astro          # ギルドカード（静的）
-│   │   ├── ChannelSelector.tsx      # チャンネル選択 UI (Preact Island)
-│   │   └── ToggleSwitch.tsx         # トグルスイッチ (Preact Island)
-│   ├── layouts/
-│   │   └── Layout.astro             # 共通レイアウト
-│   ├── lib/
-│   │   ├── auth.ts                  # lucia-auth 設定
-│   │   ├── db.ts                    # SQLite 接続
-│   │   └── redis.ts                 # Redis 接続
-│   ├── middleware.ts                # 認証ミドルウェア
-│   └── env.d.ts
-├── drizzle.config.ts
+│   │   │   ├── index.astro             # ギルド一覧
+│   │   │   └── [guildId].astro         # ギルド設定ページ
+│   │   └── api/                         # API エンドポイント
+│   ├── components/          # UI コンポーネント
+│   │   ├── ChannelSelector.tsx         # チャンネル選択 (Preact Island)
+│   │   └── ToggleSwitch.tsx
+│   ├── layouts/             # 共通レイアウト
+│   ├── lib/                 # ライブラリ（auth, db, redis）
+│   └── middleware.ts        # 認証ミドルウェア
 └── data/
-    └── dashboard.db                 # SQLite ファイル
+    └── dashboard.db         # SQLite ファイル
 ```
 
-### 8.2 ページ一覧
+### 8.3 ページ一覧
 
 | パス | レンダリング | 認証 | 説明 |
 |------|-------------|------|------|
@@ -3472,165 +3114,15 @@ dashboard/
 | `/dashboard` | SSR | 必要 | ギルド一覧表示 |
 | `/dashboard/{guildId}` | SSR | 必要 + 権限 | チャンネル設定 |
 
-### 8.3 UI コンポーネント
+### 8.4 主要コンポーネント
 
-#### ChannelSelector (Preact Island)
+**ChannelSelector (Preact Island)**:
+- チャンネル一覧から許可チャンネルを選択
+- 「全チャンネルで応答」トグル対応
+- CSRF トークンを X-CSRF-Token ヘッダーで送信
+- 楽観的ロック（If-Match / ETag）による競合検知
 
-```tsx
-// dashboard/src/components/ChannelSelector.tsx
-
-import { useState } from 'preact/hooks';
-
-interface Channel {
-  id: string;
-  name: string;
-  type: number;
-}
-
-interface Props {
-  guildId: string;
-  channels: Channel[];
-  initialWhitelist: string[];
-  initialAllowAll: boolean;
-  initialVersion: number;
-  csrfToken: string;
-}
-
-export default function ChannelSelector({ 
-  guildId, 
-  channels, 
-  initialWhitelist, 
-  initialAllowAll,
-  initialVersion,
-  csrfToken,
-}: Props) {
-  const [allowAll, setAllowAll] = useState(initialAllowAll);
-  const [whitelist, setWhitelist] = useState<Set<string>>(new Set(initialWhitelist));
-  const [version, setVersion] = useState(initialVersion);
-  const [saving, setSaving] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-
-  const handleSave = async () => {
-    setSaving(true);
-    setError(null);
-    
-    try {
-      const response = await fetch(`/api/guilds/${guildId}/config`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          'X-CSRF-Token': csrfToken,
-          'If-Match': `"${version}"`,
-        },
-        body: JSON.stringify({
-          allowAllChannels: allowAll,
-          whitelist: Array.from(whitelist),
-        }),
-      });
-      
-      if (response.status === 409) {
-        setError('設定が他のユーザーによって更新されました。ページを再読み込みしてください。');
-        return;
-      }
-      
-      if (!response.ok) {
-        const data = await response.json();
-        // ★ 503 は結果整合モデルで別途処理（handleSaveError）
-        if (response.status === 503) {
-          await handleSaveError(response, guildId);
-          return;
-        }
-        setError(data.error?.message || '保存に失敗しました。再度お試しください。');
-        return;
-      }
-      
-      const data = await response.json();
-      setVersion(data.version); // 新しい version を保持
-    } catch (err) {
-      setError('ネットワークエラーが発生しました');
-    } finally {
-      setSaving(false);
-    }
-  };
-
-  const toggleChannel = (channelId: string) => {
-    const newWhitelist = new Set(whitelist);
-    if (newWhitelist.has(channelId)) {
-      newWhitelist.delete(channelId);
-    } else {
-      newWhitelist.add(channelId);
-    }
-    setWhitelist(newWhitelist);
-  };
-
-  const selectAll = () => {
-    setWhitelist(new Set(channels.map(c => c.id)));
-  };
-
-  const deselectAll = () => {
-    setWhitelist(new Set());
-  };
-
-  return (
-    <div class="channel-selector">
-      {error && <div class="error-message">{error}</div>}
-      
-      <div class="toggle-section">
-        <label>
-          <input 
-            type="checkbox" 
-            checked={allowAll} 
-            onChange={(e) => setAllowAll(e.currentTarget.checked)} 
-          />
-          全チャンネルで応答する
-        </label>
-      </div>
-
-      {!allowAll && (
-        <div class="channel-list">
-          <div class="bulk-actions">
-            <button onClick={selectAll}>全選択</button>
-            <button onClick={deselectAll}>全解除</button>
-          </div>
-          
-          {channels.length === 0 ? (
-            <div class="no-channels-warning">
-              <p class="no-channels">Bot がチャンネル情報を取得中です。しばらくお待ちください。</p>
-              <p class="no-channels-hint">
-                ⚠️ この状態が続く場合、Bot がオフラインの可能性があります。
-                Bot が起動しているか確認してください。
-              </p>
-            </div>
-          ) : (
-            channels.map(channel => (
-              <label key={channel.id} class="channel-item">
-                <input
-                  type="checkbox"
-                  checked={whitelist.has(channel.id)}
-                  onChange={() => toggleChannel(channel.id)}
-                />
-                # {channel.name}
-              </label>
-            ))
-          )}
-        </div>
-      )}
-
-      <button 
-        class="save-button" 
-        onClick={handleSave} 
-        disabled={saving || (!allowAll && whitelist.size === 0)}
-      >
-        {saving ? '保存中...' : '設定を保存'}
-      </button>
-      
-      {!allowAll && whitelist.size === 0 && (
-        <p class="validation-hint">少なくとも1つのチャンネルを選択してください</p>
-      )}
-    </div>
-  );
-}
-```
+詳細な実装例は [DASHBOARD_FRONTEND_IMPLEMENTATION.md](DASHBOARD_FRONTEND_IMPLEMENTATION.md) を参照してくださいませ。
 
 ---
 
@@ -3638,374 +3130,37 @@ export default function ChannelSelector({
 
 ### 9.1 新規コンポーネント
 
-#### IChannelConfigRepository インターフェース
+**追加インターフェース**:
+- `IChannelConfigRepository`: 設定の取得、pub/sub 購読、チャンネルキャッシュ
+- `ChannelConfigService`: ビジネスロジック層（設定取得、フォールバック処理）
 
-```typescript
-// src/core/services/IChannelConfigRepository.ts
+**Redis キーの責務**:
+- `app:guild:{id}:config`: ギルド設定（allowAllChannels, whitelist, version）
+- `app:guild:{id}:joined`: Bot 参加フラグ（TTL なし）
+- `app:guild:{id}:channels`: チャンネル一覧キャッシュ（TTL 1時間）
 
-export interface GuildConfigData {
-  guildId: string;
-  allowAllChannels: boolean;
-  whitelist: string[];
-  version: number;
-  updatedAt: string; // ISO 8601
-}
+### 9.2 MessageHandler への統合
 
-// ★ P0対応: 三値で返すことで「未設定」と「エラー」を明確に分離
-export type ConfigResult =
-  | { kind: 'found'; data: GuildConfigData }  // 設定が存在する
-  | { kind: 'not_found' }                      // 設定が存在しない（CONFIG_NOT_FOUND_FALLBACK に従う）
-  | { kind: 'error'; reason: string };         // Redis障害など（REDIS_DOWN_FALLBACK を適用）
+既存の MessageHandler に `ChannelConfigService` を DI し、メッセージ受信時に `isChannelAllowed` でチェックします。
 
-export interface IChannelConfigRepository {
-  getConfig(guildId: string): Promise<ConfigResult>;
-  subscribe(callback: (guildId: string, version: number) => void): void;
-  setJoined(guildId: string): Promise<void>;
-  removeJoined(guildId: string): Promise<void>;
-  cacheChannels(guildId: string, channels: ChannelInfo[]): Promise<void>;
-}
+**フォールバック動作**:
+- 設定未作成（not_found）: `CONFIG_NOT_FOUND_FALLBACK` に従う（デフォルトは `ALLOW_ALL`）
+- Redis 障害（error）: `REDIS_DOWN_FALLBACK` に従う（デフォルトは `DENY_ALL`）
 
-interface ChannelInfo {
-  id: string;
-  name: string;
-  type: number;
-}
-```
+### 9.3 ギルド参加/離脱イベント
 
-#### RedisChannelConfigRepository 実装
+- `guildCreate`: joined フラグ設定 + チャンネルキャッシュ（config は作らない）
+- `guildDelete`: joined フラグ削除 + チャンネルキャッシュ削除（config は残す）
+- `channelCreate/Delete/Update`: チャンネルキャッシュを debounce 付きで更新
 
-> **★ 責務分割の将来計画**
->
-> 現在の `RedisChannelConfigRepository` は以下の責務を1クラスで担っており、責務過多の傾向がある：
->
-> | 責務 | 説明 |
-> |------|------|
-> | **Subscribe 管理** | pub/sub 接続、再接続、リトライ |
-> | **キャッシュ管理** | LRU キャッシュ、revalidate ロジック |
-> | **設定取得** | Redis GET、JSON パース |
-> | **劣化判定** | isSubscribed フラグ、degraded mode 判定 |
-> | **ヘルスチェック** | PING、subscribe 状態確認 |
-> | **エラー分類** | 接続エラー、タイムアウト等の分類 |
->
-> **P0 時点ではこの設計を維持する**。理由：
-> - 個人開発では「動くものを出す」が優先
-> - 分割しすぎると認知負荷がかえって上がる
->
-> **将来分割する場合の候補**（P2 以降で検討）：
->
-> ```
-> 現在:
->   RedisChannelConfigRepository（全部入り）
->
-> 将来:
->   ┌─────────────────────────────────────┐
->   │       ChannelConfigRepository        │ ← 外部 API（isChannelAllowed 等）
->   │   (Facade / Coordinator)             │
->   └─────────────────────────────────────┘
->            │         │           │
->   ┌────────┴───┐  ┌──┴────┐  ┌───┴─────┐
->   │ ConfigCache │  │ Redis  │  │ Redis   │
->   │ (LRU +      │  │Fetcher │  │Subscriber│
->   │  revalidate)│  │(GET)   │  │(pub/sub) │
->   └────────────┘  └────────┘  └──────────┘
-> ```
->
-> **分割のトリガー条件**:
-> - subscribe のリトライロジックが複雑化した場合
-> - キャッシュ戦略を差し替えたくなった場合（Redis→Memcached 等）
-> - テストで mock しづらくなった場合
->
-> **今すぐ分割しなくて良い理由**:
-> - 現状のコード量は 200〜300 行程度で管理可能
-> - 責務は「密結合だが変更頻度が低い」ためコロケーションのメリットが勝る
+### 9.4 LRU キャッシュと劣化モード
 
-```typescript
-// src/infrastructure/db/RedisChannelConfigRepository.ts
+**RedisChannelConfigRepository の特徴**:
+- LRU キャッシュ（最大1000ギルド）でメモリ使用量を一定に保つ
+- pub/sub 購読で設定変更をリアルタイム反映
+- subscribe 切断時は「劣化モード」で Redis を30秒間隔でポーリング
 
-import Redis from 'ioredis';
-import { IChannelConfigRepository, GuildConfigData } from '../../core/services/IChannelConfigRepository';
-
-// ★ config は TTL なしで永続保存（Redis が Bot の SoT のため）
-// 以下は channels キャッシュのみに使用
-const CHANNELS_CACHE_TTL = 60 * 60; // 1時間
-const REVALIDATE_INTERVAL = 5 * 60 * 1000; // 5分
-
-// LRU キャッシュ上限
-// 想定最大ギルド数（1,000）を超えた場合は、低頻度ギルドを Redis 参照にフォールバックさせる設計。
-// これにより、メモリ使用量を一定に保ちつつ、アクティブなギルドは高速応答を維持できる。
-//
-// ★ P2対応: メモリ見積もり
-// 1 guild config のサイズ想定:
-//   - guildId: 18文字（Snowflake）
-//   - allowAllChannels: boolean
-//   - whitelist: 最大 500 件 × 18文字 = 約 9KB（最大ケース）
-//   - version: number
-//   - updatedAt: ISO 8601 文字列 = 約 24文字
-//   - fetchedAt: number（キャッシュ用メタデータ）
-//
-// 平均的なギルド（whitelist 50件）: 約 1KB
-// 最大ケース（whitelist 500件）: 約 10KB
-//
-// LRU 1000 件でのメモリ使用量想定:
-//   - 平均: 1KB × 1,000 = 約 1MB
-//   - 最大: 10KB × 1,000 = 約 10MB
-//
-// Node.js のデフォルトヒープサイズ（512MB〜2GB）に対して十分小さく、
-// 配布版でも問題にならないレベル。
-const MAX_CACHE_SIZE = 1000;
-
-export class RedisChannelConfigRepository implements IChannelConfigRepository {
-  private redis: Redis;
-  private subscriber: Redis;
-  private cache: Map<string, { data: GuildConfigData; fetchedAt: number }> = new Map();
-  private isSubscribed: boolean = false; // 二重 subscribe 防止フラグ
-  private messageHandlers: Set<(guildId: string, version: number) => void> = new Set();
-  private subscribeRetryCount: number = 0;
-  private readonly MAX_SUBSCRIBE_RETRIES = 5;
-  private readonly SUBSCRIBE_RETRY_BASE_MS = 1000; // 指数バックオフの基底
-
-  constructor(redisUrl: string) {
-    this.redis = new Redis(redisUrl);
-    this.subscriber = new Redis(redisUrl);
-    this.setupReconnection();
-    this.setupMessageHandler();
-  }
-
-  private setupReconnection(): void {
-    this.subscriber.on('error', (err) => {
-      console.error('[Redis Subscriber] Error:', err.message);
-      // エラー時は subscribe 状態をリセット（再接続時に再購読させる）
-      this.isSubscribed = false;
-    });
-
-    this.subscriber.on('reconnecting', () => {
-      console.log('[Redis Subscriber] Reconnecting...');
-      // 再接続中は subscribe 状態をリセット
-      this.isSubscribed = false;
-    });
-
-    // ★ subscribe の実体は connect イベント内に一本化
-    // 再接続時も自動的に再購読される
-    this.subscriber.on('connect', () => {
-      console.log('[Redis Subscriber] Connected');
-      // ready イベントを待ってから subscribe する
-    });
-
-    // ★ ready イベントで subscribe を実行（connect より確実）
-    this.subscriber.on('ready', async () => {
-      console.log('[Redis Subscriber] Ready');
-      await this.subscribeWithRetry();
-    });
-  }
-
-  // ★ subscribe のリトライ戦略（指数バックオフ）
-  private async subscribeWithRetry(): Promise<void> {
-    if (this.isSubscribed) {
-      console.log('[Redis Subscriber] Already subscribed, skipping');
-      return;
-    }
-
-    try {
-      await this.subscriber.subscribe('app:config:update');
-      this.isSubscribed = true;
-      this.subscribeRetryCount = 0; // 成功したらリセット
-      console.log('[Redis Subscriber] Subscribed to app:config:update');
-    } catch (err) {
-      this.isSubscribed = false;
-      this.subscribeRetryCount++;
-      console.error(`[Redis Subscriber] Failed to subscribe (attempt ${this.subscribeRetryCount}):`, err);
-
-      if (this.subscribeRetryCount < this.MAX_SUBSCRIBE_RETRIES) {
-        // 指数バックオフでリトライ（1s, 2s, 4s, 8s, 16s）
-        const delay = this.SUBSCRIBE_RETRY_BASE_MS * Math.pow(2, this.subscribeRetryCount - 1);
-        console.log(`[Redis Subscriber] Retrying in ${delay}ms...`);
-        setTimeout(() => this.subscribeWithRetry(), delay);
-      } else {
-        console.error('[Redis Subscriber] Max retries exceeded. Subscribe failed permanently.');
-        // ここで Sentry / Discord webhook 等にアラートを送ることを推奨
-      }
-    }
-  }
-
-  // ★ message ハンドラは一度だけ登録（コンストラクタで呼び出し）
-  private setupMessageHandler(): void {
-    this.subscriber.on('message', (channel, message) => {
-      if (channel !== 'app:config:update') return;
-
-      try {
-        const { guildId, version } = JSON.parse(message);
-        
-        // キャッシュを無効化（次回 getConfig で再取得）
-        const cached = this.cache.get(guildId);
-        if (cached && cached.data.version < version) {
-          this.cache.delete(guildId);
-        }
-        
-        // ★ 登録された全コールバックを呼び出し（複数箇所からの購読に対応）
-        for (const handler of this.messageHandlers) {
-          try {
-            handler(guildId, version);
-          } catch (handlerErr) {
-            console.error('[Redis] Handler error:', handlerErr);
-          }
-        }
-      } catch (err) {
-        console.error('[Redis] Failed to parse app:config:update message:', err);
-        // パース失敗は無視（プロセスを落とさない）
-      }
-    });
-  }
-
-  // ★ subscribe 状態を確認するゲッター（ヘルスチェック用）
-  get subscriptionStatus(): { isSubscribed: boolean; retryCount: number } {
-    return {
-      isSubscribed: this.isSubscribed,
-      retryCount: this.subscribeRetryCount,
-    };
-  }
-
-  // ★ P0対応: Redis 接続状態も含めた劣化判定
-  // 「subscribe は生きているが GET が死ぬ」ケースもあるため、PING でも確認
-  private async isRedisHealthy(): Promise<boolean> {
-    try {
-      const pong = await this.redis.ping();
-      return pong === 'PONG';
-    } catch {
-      return false;
-    }
-  }
-
-  // ★ P0対応: ConfigResult（三値）で返す
-  async getConfig(guildId: string): Promise<ConfigResult> {
-    // ★ P0対応: 劣化モード - subscribe が切れている場合は30秒間隔で Redis を確認
-    // これにより「pub/sub断→直後のメッセージ→キャッシュ新しい→反映しない」問題を解消
-    const DEGRADED_REVALIDATE_INTERVAL = 30 * 1000; // 劣化時: 30秒
-    const effectiveRevalidateInterval = this.isSubscribed 
-      ? REVALIDATE_INTERVAL 
-      : DEGRADED_REVALIDATE_INTERVAL; // 劣化モード: 30秒間隔で Redis を確認
-    
-    if (!this.isSubscribed) {
-      console.warn(`[ChannelConfig] Degraded mode: will check Redis for ${guildId} (subscribe is down)`);
-    }
-    
-    // 1. キャッシュから取得
-    const cached = this.cache.get(guildId);
-    if (cached) {
-      // LRU: アクセス順を維持するため再挿入
-      this.cache.delete(guildId);
-      this.cache.set(guildId, cached);
-      
-      // ★ P0対応: effectiveRevalidateInterval で判定（劣化モード時は30秒）
-      const age = Date.now() - cached.fetchedAt;
-      if (age < effectiveRevalidateInterval) {
-        return { kind: 'found', data: cached.data };
-      }
-      
-      // 5分以上経過: version を確認
-      const remoteResult = await this.fetchFromRedis(guildId);
-      
-      // ★ P0対応: エラー時はキャッシュを返す（キャッシュがあるので安全）
-      if (remoteResult.kind === 'error') {
-        console.warn(`[Redis] Using stale cache for ${guildId} due to error: ${remoteResult.reason}`);
-        return { kind: 'found', data: cached.data };
-      }
-      
-      if (remoteResult.kind === 'found' && remoteResult.data.version > cached.data.version) {
-        this.updateCache(guildId, remoteResult.data);
-        return remoteResult;
-      }
-      // version が同じ or not_found（削除された）ならキャッシュを延長
-      cached.fetchedAt = Date.now();
-      return { kind: 'found', data: cached.data };
-    }
-
-    // 2. Redis から取得（キャッシュがない場合）
-    const result = await this.fetchFromRedis(guildId);
-    if (result.kind === 'found') {
-      this.updateCache(guildId, result.data);
-    }
-    // ★ P0対応: not_found / error をそのまま返す（呼び出し側で適切に処理）
-    return result;
-  }
-
-  // ★ P0対応: 三値で返し、「未設定」と「エラー」を明確に分離
-  // ★ P2対応: エラーの原因を分類してメトリクスに活用
-  private async fetchFromRedis(guildId: string): Promise<ConfigResult> {
-    try {
-      const raw = await this.redis.get(`app:guild:${guildId}:config`);
-      if (!raw) {
-        // キーが存在しない = 設定が未作成（CONFIG_NOT_FOUND_FALLBACK に従う）
-        return { kind: 'not_found' };
-      }
-      const data = JSON.parse(raw) as GuildConfigData;
-      return { kind: 'found', data };
-    } catch (err) {
-      // ★ P2対応: エラーの原因を分類
-      const reason = this.classifyError(err);
-      console.error(`[Redis] Failed to fetch config for ${guildId}:`, reason);
-      return { kind: 'error', reason };
-    }
-  }
-
-  // ★ P2対応: エラーの分類（メトリクスやアラートに活用）
-  private classifyError(err: unknown): string {
-    if (err instanceof SyntaxError) {
-      // JSON パースエラー（データ破損の可能性）
-      return 'JSON_PARSE_ERROR';
-    }
-    
-    if (err instanceof Error) {
-      const message = err.message.toLowerCase();
-      
-      if (message.includes('econnrefused') || message.includes('connection')) {
-        // Redis 接続エラー
-        return 'REDIS_CONNECTION_ERROR';
-      }
-      
-      if (message.includes('etimedout') || message.includes('timeout')) {
-        // タイムアウト
-        return 'REDIS_TIMEOUT';
-      }
-      
-      if (message.includes('enotfound') || message.includes('getaddrinfo')) {
-        // DNS 解決エラー
-        return 'REDIS_DNS_ERROR';
-      }
-      
-      return `UNKNOWN_ERROR: ${err.message}`;
-    }
-    
-    return 'UNKNOWN_ERROR';
-  }
-
-  private updateCache(guildId: string, data: GuildConfigData): void {
-    // LRU: 既存エントリを削除して再挿入（アクセス順を維持）
-    this.cache.delete(guildId);
-    
-    // LRU: キャッシュが上限を超えたら最も古いものを削除
-    if (this.cache.size >= MAX_CACHE_SIZE) {
-      const oldestKey = this.cache.keys().next().value;
-      if (oldestKey) this.cache.delete(oldestKey);
-    }
-    this.cache.set(guildId, { data, fetchedAt: Date.now() });
-  }
-
-  // ★ 注意: このメソッドはハンドラ登録のみを行う
-  // 実際の subscribe 処理は ready イベント内で一本化されている
-  // これにより再接続時の二重 subscribe を防止
-  // ★ callbacks: Set<fn> で複数箇所からの購読に対応
-  subscribe(callback: (guildId: string, version: number) => void): void {
-    this.messageHandlers.add(callback);
-    console.log(`[Redis] Message handler registered (total: ${this.messageHandlers.size})`);
-  }
-
-  // ハンドラの登録解除（必要に応じて）
-  unsubscribe(callback: (guildId: string, version: number) => void): void {
-    this.messageHandlers.delete(callback);
-    console.log(`[Redis] Message handler unregistered (total: ${this.messageHandlers.size})`);
-  }
-
-  async setJoined(guildId: string): Promise<void> {
+詳細な実装例は [DASHBOARD_BOT_IMPLEMENTATION.md](DASHBOARD_BOT_IMPLEMENTATION.md) を参照してくださいませ。
     // TTL なしで joined フラグをセット
     await this.redis.set(`app:guild:${guildId}:joined`, '1');
   }
@@ -4389,122 +3544,44 @@ process.on('SIGTERM', async () => {
 
 ---
 
-## 10. Docker 構成
+## 10. Docker 構成とデプロイ
 
-### 10.1 compose.yml
+### 10.1 サービス構成
 
-```yaml
-services:
-  twitter-rx:
-    container_name: TwitterEmbedRX
-    image: ghcr.io/t1nyb0x/discord-twitter-embed-rx:latest
-    restart: unless-stopped
-    env_file: .env
-    depends_on:
-      redis:
-        condition: service_healthy
-    environment:
-      - REDIS_URL=redis://redis:6379
+**追加サービス**:
+- `dashboard`: Astro SSR アプリケーション（ポート 4321）
+- `redis`: lua-auth セッション + pub/sub + キャッシュ
 
-  dashboard:
-    container_name: TwitterRX-Dashboard
-    image: ghcr.io/t1nyb0x/discord-twitter-embed-rx-dashboard:latest
-    restart: unless-stopped
-    env_file: .env
-    depends_on:
-      redis:
-        condition: service_healthy
-    ports:
-      - "127.0.0.1:4321:4321"  # localhost のみ公開（nginx 経由でアクセス）
-    environment:
-      - REDIS_URL=redis://redis:6379
-      - DATABASE_URL=file:/app/data/dashboard.db
-      - NODE_ENV=production
-    volumes:
-      - dashboard_data:/app/data
+**既存サービス**:
+- `twitter-rx`: Discord Bot本体
 
-  redis:
-    container_name: TwitterRX-Redis
-    image: redis:8.2.2-alpine
-    restart: unless-stopped
-    volumes:
-      - redis_data:/data
-    command: redis-server --appendonly yes
-    healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
-      interval: 10s
-      timeout: 5s
-      retries: 3
+### 10.2 環境変数
 
-volumes:
-  redis_data:
-  dashboard_data:
-```
+| 環境変数 | 説明 | デフォルト |
+|----------|------|-----------|
+| `DISCORD_OAUTH2_CLIENT_ID` | Discord アプリケーション Client ID | 必須 |
+| `DISCORD_OAUTH2_CLIENT_SECRET` | Discord アプリケーション Client Secret | 必須 |
+| `DISCORD_OAUTH2_REDIRECT_URI` | OAuth2 リダイレクト URI（`https://yourdomain.com/api/auth/discord/callback`） | 必須 |
+| `SESSION_SECRET` | lucia-auth セッション暗号化鍵 | 必須（32文字以上推奨） |
+| `ENCRYPTION_SALT` | accessToken 暗号化用 salt | 必須（未設定時は起動失敗） |
+| `DATABASE_URL` | SQLite ファイルパス | `file:/app/data/dashboard.db` |
+| `REDIS_URL` | Redis 接続 URL | `redis://redis:6379` |
+| `ORPHAN_CONFIG_RETENTION_DAYS` | 孤立 config 保持日数 | `30` |
 
-### 10.2 Dashboard Dockerfile
+### 10.3 nginx 設定とレート制限
 
-```dockerfile
-# dashboard/Dockerfile
+Dashboard は nginx をリバースプロキシとして使用します。
 
-FROM node:22-alpine AS builder
+**レート制限**:
+- `/api/auth/discord/login`: 30 回/分（ゾーン: `twitterrx_dashboard`）
+- その他の API エンドポイント: アプリケーション側で実装
 
-WORKDIR /app
-COPY package*.json ./
-RUN npm ci
-COPY . .
-RUN npm run build
+**セキュリティヘッダー**:
+- `X-Frame-Options: DENY`
+- `X-Content-Type-Options: nosniff`
+- `Referrer-Policy: no-referrer`
 
-FROM node:22-alpine AS runner
-
-WORKDIR /app
-ENV NODE_ENV=production
-
-# 非 root ユーザーで実行
-RUN addgroup --system --gid 1001 nodejs \
-    && adduser --system --uid 1001 astro
-USER astro
-
-COPY --from=builder --chown=astro:nodejs /app/dist ./dist
-COPY --from=builder --chown=astro:nodejs /app/node_modules ./node_modules
-COPY --from=builder --chown=astro:nodejs /app/package.json ./
-
-# マイグレーション実行スクリプト
-COPY --from=builder --chown=astro:nodejs /app/scripts/migrate.sh ./scripts/
-
-# データディレクトリ
-RUN mkdir -p /app/data && chown astro:nodejs /app/data
-VOLUME /app/data
-
-EXPOSE 4321
-
-# 起動時にマイグレーションを実行
-CMD ["sh", "-c", "./scripts/migrate.sh && node dist/server/entry.mjs"]
-```
-
-### 10.3 nginx 設定例
-
-> **他サービスとの共存について**:
-> 
-> `limit_req_zone` は `http` ブロックに配置する必要があるが、`nginx.conf` を直接編集すると
-> 同じサーバーで動作する他のサービスに影響が出る可能性がある。
-> 
-> **推奨方法**: `conf.d/` ディレクトリに専用ファイルを作成して `include` する。
-> これにより他のサービスに影響を与えず、TwitterRX 用のレート制限を定義できる。
-
-```nginx
-# /etc/nginx/conf.d/twitterrx-ratelimit.conf
-# ★ このファイルは nginx.conf の http ブロック内で自動的に include される
-# ★ zone 名を一意にすることで他のサービスと衝突しない
-
-# TwitterRX Dashboard 専用のレート制限ゾーン
-limit_req_zone $binary_remote_addr zone=twitterrx_dashboard:10m rate=30r/m;
-```
-
-> **Note**: 多くの nginx 環境では `nginx.conf` に `include /etc/nginx/conf.d/*.conf;` が
-> 既に記述されているため、`conf.d/` にファイルを置くだけで読み込まれる。
-> 
-> zone 名を `twitterrx_dashboard` のようにプロジェクト固有の名前にすることで、
-> 他のサービスが定義した zone と衝突するリスクを回避できる。
+詳細な実装例は [DASHBOARD_DEPLOYMENT.md](DASHBOARD_DEPLOYMENT.md) を参照してくださいませ。
 
 ```nginx
 # /etc/nginx/sites-available/twitterrx-dashboard
