@@ -2,6 +2,7 @@ import { BaseTwitterAdapter, ITwitterAdapter } from "./BaseTwitterAdapter";
 import { Tweet, TweetMedia } from "@/core/models/Tweet";
 import { FxTwitterApi } from "@/fxtwitter/api";
 import { Tweet as FxTweet } from "@/fxtwitter/fxtwitter";
+import logger from "@/utils/logger";
 
 /**
  * FxTwitter API アダプター
@@ -30,7 +31,9 @@ export class FxTwitterAdapter extends BaseTwitterAdapter implements ITwitterAdap
 
       return this.convertToTweet(response.tweet);
     } catch (error) {
-      console.error("FxTwitterAdapter: Failed to fetch tweet", error);
+      logger.error("FxTwitterAdapter: Failed to fetch tweet", {
+        error: error instanceof Error ? error.message : String(error),
+      });
       return undefined;
     }
   }

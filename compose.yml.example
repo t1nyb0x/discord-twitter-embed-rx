@@ -5,6 +5,9 @@ services:
     restart: always
     env_file:
       - .env
+    volumes:
+      - ./logs:/app/logs
+      - ./.config:/app/.config:ro
   redis:
     container_name: Redis
     image: redis:8.2.2-alpine

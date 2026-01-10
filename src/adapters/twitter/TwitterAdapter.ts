@@ -2,6 +2,7 @@ import { ITwitterAdapter } from "./BaseTwitterAdapter";
 import { FxTwitterAdapter } from "./FxTwitterAdapter";
 import { VxTwitterAdapter } from "./VxTwitterAdapter";
 import { Tweet } from "@/core/models/Tweet";
+import logger from "@/utils/logger";
 import { VxTwitterServerError } from "@/vxtwitter/api";
 
 /**
@@ -26,7 +27,7 @@ export class TwitterAdapter implements ITwitterAdapter {
         return primaryResult;
       }
 
-      console.log("Primary adapter failed, trying fallback...");
+      logger.debug("Primary adapter failed, trying fallback");
 
       // フォールバックアダプターで試行
       const fallbackResult = await this.fallbackAdapter.fetchTweet(url);
@@ -34,7 +35,7 @@ export class TwitterAdapter implements ITwitterAdapter {
     } catch (error) {
       // VxTwitterが500エラーを返した場合、フォールバックを試行
       if (error instanceof VxTwitterServerError) {
-        console.log(`VxTwitter returned 500 error, trying FxTwitter fallback...`);
+        logger.warn("VxTwitter returned 500 error, trying FxTwitter fallback", { status: error.status });
         const fallbackResult = await this.fallbackAdapter.fetchTweet(url);
         return fallbackResult;
       }

@@ -9,6 +9,20 @@ const __dirname = path.dirname(__filename);
 // ルートディレクトリ取得
 export const ROOT_DIR = path.dirname(__dirname);
 
+// ログ設定の型定義
+export interface LoggingConfig {
+  maxFiles: string;
+  maxSize: string;
+  logLevel: "debug" | "info" | "warn" | "error";
+  separateErrorLog: boolean;
+}
+
+// アプリケーション設定の型定義
+export interface AppConfig {
+  MEDIA_MAX_FILE_SIZE: number;
+  LOGGING: LoggingConfig;
+}
+
 const configPath = path.join(path.dirname(ROOT_DIR), "/.config/config.yml");
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 let config: any = {};
@@ -19,4 +33,33 @@ try {
   console.error("設定ファイルの読み込みに失敗しました。config.ymlを確認してください", e);
 }
 
-export default { MEDIA_MAX_FILE_SIZE: config.media_max_file_size };
+// 環境変数から NODE_ENV を取得
+const nodeEnv = process.env.NODE_ENV || "production";
+
+// ログレベルを決定（優先順位: 環境変数 LOG_LEVEL > config.yml > デフォルト値）
+const getLogLevel = (): "debug" | "info" | "warn" | "error" => {
+  const envLogLevel = process.env.LOG_LEVEL?.toLowerCase();
+  if (envLogLevel && ["debug", "info", "warn", "error"].includes(envLogLevel)) {
+    return envLogLevel as "debug" | "info" | "warn" | "error";
+  }
+
+  const configLogLevel = config.logging?.logLevel?.toLowerCase();
+  if (configLogLevel && ["debug", "info", "warn", "error"].includes(configLogLevel)) {
+    return configLogLevel as "debug" | "info" | "warn" | "error";
+  }
+
+  // デフォルト: 本番環境では info、開発環境では debug
+  return nodeEnv === "production" ? "info" : "debug";
+};
+
+const appConfig: AppConfig = {
+  MEDIA_MAX_FILE_SIZE: config.media_max_file_size || 5242800,
+  LOGGING: {
+    maxFiles: config.logging?.maxFiles || "14d",
+    maxSize: config.logging?.maxSize || "20m",
+    logLevel: getLogLevel(),
+    separateErrorLog: config.logging?.separateErrorLog ?? true,
+  },
+};
+
+export default appConfig;

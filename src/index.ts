@@ -13,6 +13,7 @@ import { RedisReplyLogger } from "@/infrastructure/db/RedisReplyLogger";
 import { FileManager } from "@/infrastructure/filesystem/FileManager";
 import { HttpClient } from "@/infrastructure/http/HttpClient";
 import { VideoDownloader } from "@/infrastructure/http/VideoDownloader";
+import logger from "@/utils/logger";
 
 enum ApplicationMode {
   Production = "production",
@@ -34,8 +35,8 @@ switch (ENV) {
     appMode = ApplicationMode.Development;
     break;
 }
-console.log(`Mode: ${appMode}`);
-console.log(`Version: ${version}`);
+logger.info(`Application started in ${appMode} mode`);
+logger.info(`Version: ${version}`);
 
 // === Load bot token from environ variable ===
 let token: string | undefined;
@@ -52,7 +53,7 @@ switch (appMode) {
 if (token === undefined) {
   throw new Error(`Failed load discord token. Mode: ${appMode}`);
 } else {
-  console.log("Successfully to load discord bot token.");
+  logger.info("Successfully loaded discord bot token");
 }
 
 // === Dependency Injection Setup ===
@@ -100,7 +101,7 @@ client.on("clientReady", async () => {
   if (client.user === null) {
     throw new Error("Failed load client");
   }
-  console.log(`Logged in as ${client.user.tag}`);
+  logger.info(`Logged in as ${client.user.tag}`);
 
   updateStatus();
 
@@ -111,7 +112,7 @@ client.on("clientReady", async () => {
 // On Message Create
 client.on("messageCreate", (m: Message) => {
   messageHandler.handleMessage(client, m).catch((error) => {
-    console.error("Error handling message:", error);
+    logger.error("Error handling message:", { error: error.message, stack: error.stack });
   });
 });
 
@@ -132,12 +133,14 @@ client.on("messageDelete", async (m) => {
         const botMsg = await channel.messages.fetch(replyId);
         if (botMsg) await botMsg.delete();
       } catch (err) {
-        console.error(`Failed to delete message ${replyId}:`, err);
+        logger.error(`Failed to delete message ${replyId}`, {
+          error: err instanceof Error ? err.message : String(err),
+        });
       }
     }
     await deleteReply(message.id);
   } catch (err) {
-    console.error(`Failed to delete message:`, err);
+    logger.error("Failed to delete message", { error: err instanceof Error ? err.message : String(err) });
   }
 });
 

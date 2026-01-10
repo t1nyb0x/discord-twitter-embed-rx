@@ -2,6 +2,7 @@ import { createWriteStream } from "node:fs";
 import * as http from "node:http";
 import * as https from "node:https";
 import { IVideoDownloader } from "@/adapters/discord/MessageHandler";
+import logger from "@/utils/logger";
 
 /**
  * 動画ダウンロードを担当
@@ -32,7 +33,7 @@ export class VideoDownloader implements IVideoDownloader {
 
           fileStream.on("finish", () => {
             fileStream.close();
-            console.log(`Download complete: ${outputPath}`);
+            logger.debug(`Download complete: ${outputPath}`);
             resolve();
           });
 
