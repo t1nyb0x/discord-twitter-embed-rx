@@ -1,8 +1,0 @@
-media_max_file_size: 5242800 # Discordに添付するメディアファイルの上限サイズ 5MB
-
-# ログ設定
-logging:
-  maxFiles: "14d"      # ログファイルの保持期間
-  maxSize: "20m"       # ログファイルの最大サイズ
-  logLevel: "info"     # ログレベル (debug, info, warn, error) ※環境変数 LOG_LEVEL が優先されます
-  separateErrorLog: true  # エラーログを別ファイルに分離するか
