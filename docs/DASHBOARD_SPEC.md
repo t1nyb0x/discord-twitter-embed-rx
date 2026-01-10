@@ -3923,30 +3923,33 @@ openssl rand -base64 32
 - [x] **P1: 定期リコンシルジョブ（10分ごとに joined なギルドの config 補完）**
 - [x] **P2: 監査ログ保持期間設定化（AUDIT_LOG_RETENTION_DAYS 環境変数）**
 
-### Phase 2: Bot 側統合（P0 対応込み）
+### Phase 2: Bot 側統合（P0 対応込み）✅ **完了！**
 
 - [x] `IChannelConfigRepository` インターフェース定義
   - [x] **P0: ConfigResult 型（三値: found/not_found/error）を定義**
-- [ ] `RedisChannelConfigRepository` 実装
-  - [ ] LRU キャッシュ（上限 1000）
-  - [ ] config 永続キャッシュ（TTL なし）
-  - [ ] version ベースの revalidate（5分間隔）
-  - [ ] Redis 再接続時の subscribe 再設定
-  - [ ] **P0: fetchFromRedis で error を明示的に返す**
-  - [ ] **P0: 劣化モード（subscribe 切断時は30秒間隔で Redis 確認）**
-  - [ ] **P0: guildDelete で config を削除しない（再参加時の全許可防止）**
-  - [ ] **P0: 起動時ヘルスチェック（performHealthCheck）**
-  - [ ] **P0: isRedisHealthy で PING 確認**
-  - [ ] **P2: エラー分類（JSON_PARSE_ERROR / REDIS_CONNECTION_ERROR 等）**
-- [ ] `ChannelConfigService` 実装
-  - [ ] **P0: isChannelAllowed で ConfigResult.kind に応じた分岐**
-  - [ ] **P0: error 時は REDIS_DOWN_FALLBACK を適用**
-- [ ] `MessageHandler` への統合
-- [ ] `guildCreate` / `guildDelete` イベントハンドリング
-- [ ] **P0: channels キャッシュの 100件制限撤廃（全件保存）**
-- [ ] **P0: channels:refresh 定期チェック（10分ごと）**
-- [ ] **P1: メッセージ受信時の低頻度 channels リフレッシュ**
-- [ ] Graceful shutdown 実装
+- [x] `RedisChannelConfigRepository` 実装
+  - [x] LRU キャッシュ（上限 1000）
+  - [x] config 永続キャッシュ（TTL なし）
+  - [x] version ベースの revalidate（5分間隔）
+  - [x] Redis 再接続時の subscribe 再設定
+  - [x] **P0: fetchFromRedis で error を明示的に返す**
+  - [x] **P0: 劣化モード（subscribe 切断時は30秒間隔で Redis 確認）**
+  - [x] **P0: guildDelete で config を削除しない（再参加時の全許可防止）**
+  - [x] **P0: 起動時ヘルスチェック（performHealthCheck）**
+  - [x] **P0: isRedisHealthy で PING 確認**
+  - [x] **P2: エラー分類（JSON_PARSE_ERROR / REDIS_CONNECTION_ERROR 等）**
+- [x] `ChannelConfigService` 実装
+  - [x] **P0: isChannelAllowed で ConfigResult.kind に応じた分岐**
+  - [x] **P0: error 時は REDIS_DOWN_FALLBACK を適用**
+  - [x] **P0: not_found 時は CONFIG_NOT_FOUND_FALLBACK を適用**
+- [x] `MessageHandler` への統合
+- [x] `guildCreate` / `guildDelete` イベントハンドリング
+- [x] **P0: channels キャッシュの 100件制限撤廃（全件保存）**
+- [x] **P0: channels:refresh 定期チェック（10分ごと）**
+- [x] **P0: ready 時に全ギルドの初期化（joined + channels）**
+- [x] **P1: メッセージ受信時の低頻度 channels リフレッシュ**
+- [x] Graceful shutdown 実装
+- [x] **環境変数追加（REDIS_DOWN_FALLBACK, CONFIG_NOT_FOUND_FALLBACK）**
 
 ### Phase 3: Dashboard UI
 
