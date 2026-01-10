@@ -1,4 +1,5 @@
 import { TweetMedia } from "@/core/models/Tweet";
+import logger from "@/utils/logger";
 
 export interface MediaFilterResult {
   downloadable: TweetMedia[];
@@ -30,7 +31,10 @@ export class MediaHandler {
           const size = await this.fileSizeChecker.getFileSize(item.url);
           return { media: item, size, error: null };
         } catch (error) {
-          console.error(`Error checking file size for ${item.url}:`, error);
+          logger.error("Error checking file size", {
+            url: item.url,
+            error: error instanceof Error ? error.message : String(error),
+          });
           return { media: item, size: Infinity, error };
         }
       })
