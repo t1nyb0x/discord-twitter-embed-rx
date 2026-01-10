@@ -1,5 +1,6 @@
 import { redis } from "@/db/init";
 import { IReplyLogger, ReplyInfo } from "@/db/replyLogger";
+import logger from "@/utils/logger";
 
 /**
  * Redisを使用したReplyLogger実装
@@ -32,7 +33,9 @@ export class RedisReplyLogger implements IReplyLogger {
 
       return JSON.parse(json);
     } catch (err) {
-      console.error(`Failed to parse reply data for ${origMsgId}:`, err);
+      logger.error(`Failed to parse reply data for ${origMsgId}`, {
+        error: err instanceof Error ? err.message : String(err),
+      });
       return null;
     }
   }

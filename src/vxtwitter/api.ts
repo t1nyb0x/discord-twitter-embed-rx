@@ -1,5 +1,6 @@
 import axios from "axios";
 import { VxTwitter } from "./vxtwitter";
+import logger from "@/utils/logger";
 
 export class VxTwitterServerError extends Error {
   constructor(
@@ -26,7 +27,7 @@ export class VxTwitterApi {
         }
 
         if (status !== 404 && process.env.NODE_ENV !== "test") {
-          console.error(`[VxTwitterApi] API request failed (${status}):`, e.message);
+          logger.error("VxTwitterApi: API request failed", { status, message: e.message });
         }
       }
       return undefined;

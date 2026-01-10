@@ -5,6 +5,8 @@ services:
     restart: always
     env_file:
       - .env
+    volumes:
+      - ./logs:/app/logs  # ログファイルの永続化
   redis:
     container_name: Redis
     image: redis:8.2.2-alpine

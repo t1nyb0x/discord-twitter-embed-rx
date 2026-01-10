@@ -1,5 +1,6 @@
 import axios from "axios";
 import { FXTwitter } from "./fxtwitter";
+import logger from "@/utils/logger";
 
 export class FxTwitterApi {
   async getPostInformation(url: string): Promise<FXTwitter | undefined> {
@@ -10,7 +11,7 @@ export class FxTwitterApi {
       if (axios.isAxiosError(e)) {
         const status = e.response?.status;
         if (status !== 404 && process.env.NODE_ENV !== "test") {
-          console.error(`[FxTwitterApi] API request failed (${status}):`, e.message);
+          logger.error("FxTwitterApi: API request failed", { status, message: e.message });
         }
       }
       return undefined;
