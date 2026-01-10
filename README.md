@@ -13,8 +13,8 @@ Twitter（X）の投稿URLをDiscord上に発信すると、[vxTwitter](https://
 
 ### リポジトリのクローン
 
-このプロジェクトは Dashboard を Git サブモジュールとして管理していますわ。
-初回クローン時は以下のコマンドを実行してくださいませ：
+このプロジェクトは Dashboard を Git サブモジュールとして管理しています。
+初回クローン時は以下のコマンドを実行してください：
 
 ```bash
 # サブモジュールを含めてクローン
@@ -26,9 +26,9 @@ git submodule update --init --recursive
 
 ### Dashboard の開発
 
-Dashboard は別リポジトリで管理されていますわ：
+Dashboard は別リポジトリで管理されています：
 - リポジトリ: [discord-twitter-embed-rx-dashboard](https://github.com/t1nyb0x/discord-twitter-embed-rx-dashboard)
-- 詳細な手順は `dashboard/README.md` をご参照くださいませ
+- 詳細な手順は `dashboard/README.md` をご参照ください
 
 ## 使い方
 
@@ -53,7 +53,7 @@ productionとdevelopがありますが、どちらを設定しても動作に変
 
 ### Dashboard (v2.0) を使う場合
 
-Dashboard を使用すると、Web UI からチャンネルごとの応答設定ができますわ。
+Dashboard を使用すると、Web UI からチャンネルごとの応答設定ができます。
 
 #### 1. Dashboard の環境設定
 
@@ -62,7 +62,7 @@ Dashboard を使用すると、Web UI からチャンネルごとの応答設定
 cp dashboard/.env.example dashboard/.env
 ```
 
-`dashboard/.env` を編集し、以下を設定してくださいませ：
+`dashboard/.env` を編集し、以下を設定してください：
 
 ```env
 # Discord OAuth2 (Developer Portal で取得)
@@ -82,7 +82,7 @@ REDIS_URL=redis://redis:6379
 ```
 
 **⚠️ 重要**: `SESSION_SECRET` と `ENCRYPTION_SALT` は必ず生成してください！
-デフォルト値のまま使用すると、セキュリティリスクがありますわ。
+デフォルト値のまま使用すると、セキュリティリスクがあります。
 
 #### 2. Docker Compose で起動
 
@@ -113,14 +113,14 @@ vim docker/nginx/conf.d/dashboard.conf
 docker compose up -d
 ```
 
-本番環境で Let's Encrypt を使う場合は、`compose.yml.with-nginx` のコメントを参照してくださいませ。
+本番環境で Let's Encrypt を使う場合は、`compose.yml.with-nginx` のコメントを参照してください。
 
 #### 4. Dashboard にアクセス
 
 - 開発環境: `http://localhost:4321`
 - nginx 使用時: `https://yourdomain.com`
 
-Discord OAuth2 でログインし、サーバー設定ページでチャンネルごとの応答設定ができますわ！
+Discord OAuth2 でログインし、サーバー設定ページでチャンネルごとの応答設定ができます！
 
 ### ローカルで動かす場合（Bot のみ）
 
@@ -214,7 +214,7 @@ docker compose restart dashboard
 
 ### バックアップと復旧
 
-Dashboard v2.0 では **named volume** 方式でデータを永続化していますわ。
+Dashboard v2.0 では **named volume** 方式でデータを永続化しています。
 
 #### 定期バックアップ（推奨: 日次）
 

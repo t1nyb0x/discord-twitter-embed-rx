@@ -2900,7 +2900,7 @@ async function validateCsrfToken(sessionId: string, token: string | undefined): 
 - セッション有効期限を UI に表示（残り24時間で警告）
 - refresh_token は使用しない（実装複雑化を避ける）
 
-詳細な実装例は [DASHBOARD_AUTH_IMPLEMENTATION.md](DASHBOARD_AUTH_IMPLEMENTATION.md) を参照してくださいませ。
+詳細な実装例は [DASHBOARD_AUTH_IMPLEMENTATION.md](DASHBOARD_AUTH_IMPLEMENTATION.md) を参照してください。
 
 ### 7.5 botJoined の判定方式
 
@@ -2915,7 +2915,7 @@ async function validateCsrfToken(sessionId: string, token: string | undefined): 
 - Bot 離脱時に `config` は削除しない（再参加時の「全許可」復帰を防止）
 - 孤立した config は日次クリーンアップで削除（環境変数 `ORPHAN_CONFIG_RETENTION_DAYS` で設定、デフォルト30日）
 
-詳細な実装例は [DASHBOARD_BOT_IMPLEMENTATION.md](DASHBOARD_BOT_IMPLEMENTATION.md) を参照してくださいませ。
+詳細な実装例は [DASHBOARD_BOT_IMPLEMENTATION.md](DASHBOARD_BOT_IMPLEMENTATION.md) を参照してください。
 
 ### 7.6 チャンネル一覧のキャッシュ
 
@@ -2926,7 +2926,7 @@ Dashboard は Bot トークンを持たないため、Bot がチャンネル一�
 - TTL: 1時間
 - 更新タイミング: `guildCreate`、`channelCreate`、`channelDelete` イベント
 
-詳細な実装例は [DASHBOARD_BOT_IMPLEMENTATION.md](DASHBOARD_BOT_IMPLEMENTATION.md) を参照してくださいませ。
+詳細な実装例は [DASHBOARD_BOT_IMPLEMENTATION.md](DASHBOARD_BOT_IMPLEMENTATION.md) を参照してください。
 
 **レート制限対策**: チャンネル変更イベントが連続すると Discord API を連打してしまうため、
 **ギルド単位で debounce（30秒）** を適用する。
@@ -3122,7 +3122,7 @@ dashboard/
 - CSRF トークンを X-CSRF-Token ヘッダーで送信
 - 楽観的ロック（If-Match / ETag）による競合検知
 
-詳細な実装例は [DASHBOARD_FRONTEND_IMPLEMENTATION.md](DASHBOARD_FRONTEND_IMPLEMENTATION.md) を参照してくださいませ。
+詳細な実装例は [DASHBOARD_FRONTEND_IMPLEMENTATION.md](DASHBOARD_FRONTEND_IMPLEMENTATION.md) を参照してください。
 
 ---
 
@@ -3160,7 +3160,7 @@ dashboard/
 - pub/sub 購読で設定変更をリアルタイム反映
 - subscribe 切断時は「劣化モード」で Redis を30秒間隔でポーリング
 
-詳細な実装例は [DASHBOARD_BOT_IMPLEMENTATION.md](DASHBOARD_BOT_IMPLEMENTATION.md) を参照してくださいませ。
+詳細な実装例は [DASHBOARD_BOT_IMPLEMENTATION.md](DASHBOARD_BOT_IMPLEMENTATION.md) を参照してください。
     // TTL なしで joined フラグをセット
     await this.redis.set(`app:guild:${guildId}:joined`, '1');
   }
@@ -3581,7 +3581,7 @@ Dashboard は nginx をリバースプロキシとして使用します。
 - `X-Content-Type-Options: nosniff`
 - `Referrer-Policy: no-referrer`
 
-詳細な実装例は [DASHBOARD_DEPLOYMENT.md](DASHBOARD_DEPLOYMENT.md) を参照してくださいませ。
+詳細な実装例は [DASHBOARD_DEPLOYMENT.md](DASHBOARD_DEPLOYMENT.md) を参照してください。
 
 ```nginx
 # /etc/nginx/sites-available/twitterrx-dashboard
@@ -3992,24 +3992,24 @@ openssl rand -base64 32
 ### Phase 4: デプロイ
 
 - [x] Dashboard Dockerfile 作成
-- [ ] compose.yml 更新
-  - [ ] **P1: named volume 方式に統一**
-- [ ] compose.yml.with-nginx 作成（nginx 込み版）
-  - [ ] **P0: upstream 名を統一（twitterrx_dashboard_backend）**
+- [x] compose.yml 更新
+  - [x] **P1: named volume 方式に統一**
+- [x] compose.yml.with-nginx 作成（nginx 込み版）
+  - [x] **P0: upstream 名を統一（twitterrx_dashboard_backend）**
 - [x] .env.example 作成
   - [x] ENCRYPTION_SALT を必須として記載
-- [ ] **P0: lucia-auth から Oslo + Arctic への移行**
-  - [ ] oslo パッケージ導入（セッション管理）
-  - [ ] arctic パッケージ導入（OAuth2 クライアント）
-  - [ ] `src/lib/auth.ts` の書き換え（Oslo Session API 利用）
-  - [ ] `src/lib/discord.ts` の書き換え（Arctic Discord Provider 利用）
-  - [ ] `src/middleware.ts` の Oslo 対応（session validation ロジック更新）
-  - [ ] 認証フローの動作確認（login → callback → logout）
-  - [ ] セッション TTL・Cookie 属性の維持確認
-  - [ ] ドキュメント更新（CHANGELOG に移行理由を記載）
+- [x] **P0: lucia-auth から Oslo + Arctic への移行**
+  - [x] oslo パッケージ導入（セッション管理）
+  - [x] arctic パッケージ導入（OAuth2 クライアント）
+  - [x] `src/lib/auth.ts` の書き換え（Oslo Session API 利用）
+  - [x] `src/lib/discord.ts` の書き換え（Arctic Discord Provider 利用）
+  - [x] `src/middleware.ts` の Oslo 対応（session validation ロジック更新）
+  - [x] 認証フローの動作確認（login → callback → logout）
+  - [x] セッション TTL・Cookie 属性の維持確認
+  - [x] ドキュメント更新（CHANGELOG に移行理由を記載）
 - [ ] CI/CD パイプライン更新
-- [ ] ドキュメント更新（README）
-  - [ ] バックアップ手順を named volume 前提に更新
+- [x] ドキュメント更新（README）
+  - [x] バックアップ手順を named volume 前提に更新
 
 ### Phase 5: 品質向上（P2）
 

@@ -1,6 +1,6 @@
 # nginx SSL ディレクトリ
 
-このディレクトリには SSL 証明書を配置してくださいませ。
+このディレクトリには SSL 証明書を配置してください。
 
 ## 開発環境用（自己署名証明書）
 
@@ -30,5 +30,5 @@ ssl_certificate_key /etc/letsencrypt/live/yourdomain.com/privkey.pem;
 
 ## 注意事項
 
-このディレクトリの内容は `.gitignore` で除外されていますわ。
+このディレクトリの内容は `.gitignore` で除外されています。
 秘密鍵は絶対にリポジトリにコミットしないでくださいませ！
