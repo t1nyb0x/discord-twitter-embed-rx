@@ -3904,19 +3904,19 @@ openssl rand -base64 32
 
 ### Phase 1: 基盤構築（P0 対応込み）
 
-- [ ] Dashboard ディレクトリ構成作成
-- [ ] Astro + Preact 環境構築
-- [ ] SQLite + Drizzle ORM セットアップ
-- [ ] マイグレーションスクリプト作成
-- [ ] Discord OAuth2 認証実装
-- [ ] CSRF トークン発行・検証実装（TTL をセッションと同期）
-  - [ ] **P0: CSRF 検証で長さチェック・形式バリデーション追加（例外落ち防止）**
-- [ ] Cookie 属性設定（HttpOnly, Secure, SameSite）
-- [ ] **P0: ENCRYPTION_SALT 必須化（未設定時は起動失敗）**
-- [ ] **P0: レート制限を Lua スクリプトで原子化**
+- [x] Dashboard ディレクトリ構成作成
+- [x] Astro + Preact 環境構築
+- [x] SQLite + Drizzle ORM セットアップ
+- [x] マイグレーションスクリプト作成
+- [x] Discord OAuth2 認証実装
+- [x] CSRF トークン発行・検証実装（TTL をセッションと同期）
+  - [x] **P0: CSRF 検証で長さチェック・形式バリデーション追加（例外落ち防止）**
+- [x] Cookie 属性設定（HttpOnly, Secure, SameSite）
+- [x] **P0: ENCRYPTION_SALT 必須化（未設定時は起動失敗）**
+- [x] **P0: レート制限を Lua スクリプトで原子化**
 - [ ] **P0: 401 時の再ログイン導線 UI**
-- [ ] **P0: Redis 再シード処理実装（Dashboard 起動時に SQLite→Redis）**
-- [ ] **P1: API 共通ヘッダーで Cache-Control: no-store を強制（createApiResponse / createApiError）**
+- [x] **P0: Redis 再シード処理実装（Dashboard 起動時に SQLite→Redis）**
+- [x] **P1: API 共通ヘッダーで Cache-Control: no-store を強制（createApiResponse / createApiError）**
 - [ ] **P1: 404 エラー（BOT_NOT_JOINED_OR_OFFLINE）で Cache-Control: no-store 付与確認**
 - [ ] **P1: Redis reseed 時のメタキー（config_schema_version）導入**
 - [ ] **P1: reseed 時の部分キー欠落チェック（checkForMissingConfigs）**
@@ -3925,8 +3925,8 @@ openssl rand -base64 32
 
 ### Phase 2: Bot 側統合（P0 対応込み）
 
-- [ ] `IChannelConfigRepository` インターフェース定義
-  - [ ] **P0: ConfigResult 型（三値: found/not_found/error）を定義**
+- [x] `IChannelConfigRepository` インターフェース定義
+  - [x] **P0: ConfigResult 型（三値: found/not_found/error）を定義**
 - [ ] `RedisChannelConfigRepository` 実装
   - [ ] LRU キャッシュ（上限 1000）
   - [ ] config 永続キャッシュ（TTL なし）
@@ -3974,13 +3974,13 @@ openssl rand -base64 32
 
 ### Phase 4: デプロイ
 
-- [ ] Dashboard Dockerfile 作成
+- [x] Dashboard Dockerfile 作成
 - [ ] compose.yml 更新
   - [ ] **P1: named volume 方式に統一**
 - [ ] compose.yml.with-nginx 作成（nginx 込み版）
   - [ ] **P0: upstream 名を統一（twitterrx_dashboard_backend）**
-- [ ] .env.example 作成
-  - [ ] ENCRYPTION_SALT を必須として記載
+- [x] .env.example 作成
+  - [x] ENCRYPTION_SALT を必須として記載
 - [ ] **P0: lucia-auth から Oslo + Arctic への移行**
   - [ ] oslo パッケージ導入（セッション管理）
   - [ ] arctic パッケージ導入（OAuth2 クライアント）
