@@ -18,7 +18,15 @@ const compat = new FlatCompat({
 
 export default [
   {
-    ignores: ["dist/**", "coverage/**", "node_modules/**", "*.config.*", "*.mjs", "dashboard/**"],
+    ignores: [
+      "dist/**",
+      "coverage/**",
+      "node_modules/**",
+      "*.config.*",
+      "*.mjs",
+      ".astro/**",
+      "**/*.astro", // Astroファイルは除外（TypeScriptパーサーでパースできないため）
+    ],
   },
   ...compat.extends("eslint:recommended", "plugin:@typescript-eslint/recommended", "prettier"),
   {
@@ -30,6 +38,7 @@ export default [
     languageOptions: {
       globals: {
         ...globals.node,
+        ...globals.browser,
       },
 
       parser: tsParser,
@@ -38,6 +47,7 @@ export default [
 
       parserOptions: {
         project: "./tsconfig.json",
+        extraFileExtensions: [".astro"],
       },
     },
 

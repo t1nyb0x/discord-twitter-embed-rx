@@ -1,0 +1,35 @@
+{
+  "name": "@twitterrx/dashboard",
+  "type": "module",
+  "version": "2.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "astro dev",
+    "start": "astro dev",
+    "build": "astro check && astro build",
+    "preview": "astro preview",
+    "astro": "astro",
+    "db:generate": "drizzle-kit generate",
+    "db:migrate": "drizzle-kit migrate",
+    "db:studio": "drizzle-kit studio",
+    "lint": "eslint . --ext .ts,.tsx",
+    "lint:fix": "eslint . --ext .ts,.tsx --fix"
+  },
+  "dependencies": {
+    "@astrojs/check": "^0.9.4",
+    "@astrojs/node": "^8.3.4",
+    "@astrojs/preact": "^3.5.3",
+    "@lucia-auth/adapter-session-redis": "^1.0.0",
+    "astro": "^4.16.14",
+    "better-sqlite3": "^11.8.1",
+    "drizzle-orm": "^0.36.4",
+    "ioredis": "^5.4.2",
+    "lucia": "^3.2.2",
+    "preact": "^10.24.3",
+    "typescript": "^5.7.2"
+  },
+  "devDependencies": {
+    "@types/better-sqlite3": "^7.6.12",
+    "drizzle-kit": "^0.30.1"
+  }
+}

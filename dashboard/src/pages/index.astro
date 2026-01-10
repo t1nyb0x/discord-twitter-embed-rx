@@ -1,0 +1,41 @@
+---
+import Layout from '@/layouts/Layout.astro';
+
+const user = Astro.locals.user;
+
+if (user) {
+  return Astro.redirect('/dashboard');
+}
+---
+
+<Layout title="ホーム">
+  <div style="text-align: center; padding: 4rem 0;">
+    <h1 style="font-size: 3rem; margin-bottom: 1rem; color: #5865f2;">
+      TwitterRX Dashboard
+    </h1>
+    <p style="font-size: 1.25rem; color: #666; margin-bottom: 2rem;">
+      Discord Bot の設定を簡単に管理できますわ
+    </p>
+    <a href="/api/auth/discord/login" class="btn btn-primary" style="font-size: 1.125rem;">
+      Discord でログイン
+    </a>
+  </div>
+  
+  <div style="max-width: 800px; margin: 4rem auto; padding: 2rem; background: white; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+    <h2 style="margin-bottom: 1rem;">機能</h2>
+    <ul style="list-style: none; padding: 0;">
+      <li style="padding: 1rem 0; border-bottom: 1px solid #eee;">
+        ✨ Discord OAuth2 による安全なログイン
+      </li>
+      <li style="padding: 1rem 0; border-bottom: 1px solid #eee;">
+        🎯 チャンネルごとの応答制御
+      </li>
+      <li style="padding: 1rem 0; border-bottom: 1px solid #eee;">
+        ⚡ リアルタイム設定反映（最大5分）
+      </li>
+      <li style="padding: 1rem 0;">
+        🔒 CSRF 対策とレート制限で安全性を確保
+      </li>
+    </ul>
+  </div>
+</Layout>

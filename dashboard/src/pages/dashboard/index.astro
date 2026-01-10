@@ -1,0 +1,41 @@
+---
+import Layout from '../../layouts/Layout.astro';
+
+const user = Astro.locals.user;
+
+if (!user) {
+  return Astro.redirect('/');
+}
+---
+
+<Layout title="ダッシュボード">
+  <div style="padding: 2rem 0;">
+    <h1 style="font-size: 2rem; margin-bottom: 1rem;">
+      ようこそ、{user.username} さん
+    </h1>
+    <p style="color: #666; margin-bottom: 2rem;">
+      ギルド一覧は現在実装中ですわ。Phase 3 で完成予定です。
+    </p>
+    
+    <div style="background: white; padding: 2rem; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+      <h2 style="margin-bottom: 1rem;">Phase 1 完了項目</h2>
+      <ul style="list-style: disc; padding-left: 2rem; line-height: 2;">
+        <li>✅ Dashboard ディレクトリ構成作成</li>
+        <li>✅ Astro + Preact 環境構築</li>
+        <li>✅ SQLite + Drizzle ORM セットアップ</li>
+        <li>✅ Discord OAuth2 認証実装（lucia-auth）</li>
+        <li>✅ CSRF トークン + Cookie 属性設定</li>
+        <li>✅ P0対応: ENCRYPTION_SALT 必須化</li>
+        <li>✅ P0対応: レート制限 Lua 原子化</li>
+        <li>✅ Redis 再シード処理実装</li>
+      </ul>
+      
+      <h2 style="margin-top: 2rem; margin-bottom: 1rem;">次のステップ (Phase 2)</h2>
+      <ul style="list-style: disc; padding-left: 2rem; line-height: 2;">
+        <li>Bot 側の IChannelConfigRepository 実装</li>
+        <li>RedisChannelConfigRepository（LRU キャッシュ + pub/sub）</li>
+        <li>MessageHandler への統合</li>
+      </ul>
+    </div>
+  </div>
+</Layout>
