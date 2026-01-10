@@ -3953,27 +3953,41 @@ openssl rand -base64 32
 
 ### Phase 3: Dashboard UI
 
-- [ ] ギルド一覧ページ
-- [ ] チャンネル設定ページ
-  - [ ] テキストチャンネルのみフィルタ
-  - [ ] 設定反映タイミングの説明表示（最大遅延を明記）
-- [ ] ChannelSelector コンポーネント
-  - [ ] **P0: クライアントサイド検索実装**
-  - [ ] **P0: チャンネル ID 直接指定エスケープハッチ**
-  - [ ] **P0: チャンネル再取得ボタン標準搭載（MUST）**
-- [ ] **P0: 404 (BOT_NOT_JOINED_OR_OFFLINE) のリトライ導線 UI**
-  - [ ] **P1: 404 レスポンスの content-type 確認ガード追加**
-- [ ] **P1: セッション期限警告 UI（残り 24時間で警告）**
-- [ ] 設定保存 API
-  - [ ] トランザクション処理
-  - [ ] **P0: 楽観的ロックを UPDATE WHERE version で担保（affected rows 判定）**
-  - [ ] **P1: If-Match 形式の厳格化（"version" 形式のみ許可）**
-  - [ ] 監査ログ記録
-  - [ ] バリデーション（whitelist 上限 500 件）
-  - [ ] **P1: INSERT OR IGNORE でデフォルト作成を冪等化**
-  - [ ] **P0: 503 時のレスポンスに現在 version を含める**
-  - [ ] **P1: PUBLISH 失敗時は warning を返す（200 OK）**
-- [ ] レート制限実装
+- [x] ギルド一覧ページ
+  - [x] GET /api/guilds 実装
+  - [x] Bot 参加状態の表示
+  - [x] レート制限統合 (10req/10sec)
+- [x] チャンネル設定ページ
+  - [x] テキストチャンネルのみフィルタ
+  - [x] 設定反映タイミングの説明表示（最大遅延を明記）
+- [x] ChannelSelector コンポーネント
+  - [x] **P0: クライアントサイド検索実装**
+  - [x] **P0: チャンネル ID 直接指定エスケープハッチ**
+  - [x] **P0: チャンネル再取得ボタン標準搭載（MUST）**
+- [x] **P0: 404 (BOT_NOT_JOINED_OR_OFFLINE) のリトライ導線 UI**
+  - [x] **P1: 404 レスポンスの content-type 確認ガード追加**
+- [x] **P1: セッション期限警告 UI（セッション期限切れページ）**
+- [x] 設定保存 API
+  - [x] トランザクション処理
+  - [x] **P0: 楽観的ロックを UPDATE WHERE version で担保（affected rows 判定）**
+  - [x] **P1: If-Match 形式の厳格化（"version" 形式のみ許可）**
+  - [x] 監査ログ記録
+  - [x] バリデーション（whitelist 上限 500 件）
+  - [x] **P1: INSERT OR IGNORE でデフォルト作成を冪等化**
+  - [x] **P0: 503 時のレスポンスに現在 version を含める**
+  - [x] **P1: PUBLISH 失敗時は warning を返す（200 OK）**
+- [x] レート制限実装
+  - [x] GET /api/guilds: 10req/10sec
+  - [x] GET /api/guilds/:id/config: 10req/10sec
+  - [x] PUT /api/guilds/:id/config: 5req/60sec
+  - [x] GET /api/guilds/:id/channels: 15req/10sec
+  - [x] POST /api/guilds/:id/channels/refresh: 3req/60sec
+- [x] エラーハンドリング UI
+  - [x] ErrorDisplay コンポーネント作成
+  - [x] レート制限エラーの適切な表示
+  - [x] セッション期限切れ時の自動リダイレクト
+  - [x] 409 Conflict の自動リロード処理
+  - [x] 503 Degraded Mode の警告表示
 
 ### Phase 4: デプロイ
 
