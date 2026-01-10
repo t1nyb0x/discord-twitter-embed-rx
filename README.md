@@ -9,6 +9,27 @@ Twitter（X）の投稿URLをDiscord上に発信すると、[vxTwitter](https://
 
 ![実行例](./md/image.png)
 
+## セットアップ
+
+### リポジトリのクローン
+
+このプロジェクトは Dashboard を Git サブモジュールとして管理していますわ。
+初回クローン時は以下のコマンドを実行してくださいませ：
+
+```bash
+# サブモジュールを含めてクローン
+git clone --recurse-submodules https://github.com/t1nyb0x/discord-twitter-embed-rx.git
+
+# または、既にクローン済みの場合
+git submodule update --init --recursive
+```
+
+### Dashboard の開発
+
+Dashboard は別リポジトリで管理されていますわ：
+- リポジトリ: [discord-twitter-embed-rx-dashboard](https://github.com/t1nyb0x/discord-twitter-embed-rx-dashboard)
+- 詳細な手順は `dashboard/README.md` をご参照くださいませ
+
 ## 使い方
 
 ### 前提
