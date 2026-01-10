@@ -51,11 +51,82 @@ productionとdevelopがありますが、どちらを設定しても動作に変
 
 の設定で問題ないかと思います。
 
-### ローカルで動かす場合
+### Dashboard (v2.0) を使う場合
+
+Dashboard を使用すると、Web UI からチャンネルごとの応答設定ができますわ。
+
+#### 1. Dashboard の環境設定
+
+```bash
+# Dashboard の .env.example をコピー
+cp dashboard/.env.example dashboard/.env
+```
+
+`dashboard/.env` を編集し、以下を設定してくださいませ：
+
+```env
+# Discord OAuth2 (Developer Portal で取得)
+DISCORD_OAUTH2_CLIENT_ID=your_client_id
+DISCORD_OAUTH2_CLIENT_SECRET=your_client_secret
+DISCORD_OAUTH2_REDIRECT_URI=https://yourdomain.com/api/auth/discord/callback
+
+# セッション暗号化用（必ず変更すること！）
+SESSION_SECRET=$(openssl rand -base64 32)
+ENCRYPTION_SALT=$(openssl rand -base64 32)
+
+# Database (デフォルトのまま)
+DATABASE_URL=file:./data/dashboard.db
+
+# Redis (docker-compose の場合)
+REDIS_URL=redis://redis:6379
+```
+
+**⚠️ 重要**: `SESSION_SECRET` と `ENCRYPTION_SALT` は必ず生成してください！
+デフォルト値のまま使用すると、セキュリティリスクがありますわ。
+
+#### 2. Docker Compose で起動
+
+```bash
+# 3コンテナ構成で起動（Bot + Dashboard + Redis）
+docker compose up -d
+
+# ログ確認
+docker compose logs -f
+```
+
+#### 3. nginx リバースプロキシを使う場合（本番推奨）
+
+```bash
+# nginx 込みの構成を使用
+cp compose.yml.with-nginx compose.yml
+
+# SSL 証明書を配置（開発環境用の自己署名証明書を生成する例）
+openssl req -x509 -nodes -days 365 -newkey rsa:2048 \
+  -keyout docker/nginx/ssl/key.pem \
+  -out docker/nginx/ssl/cert.pem \
+  -subj "/CN=localhost"
+
+# nginx の設定ファイルを編集（必要に応じて）
+vim docker/nginx/conf.d/dashboard.conf
+
+# 起動
+docker compose up -d
+```
+
+本番環境で Let's Encrypt を使う場合は、`compose.yml.with-nginx` のコメントを参照してくださいませ。
+
+#### 4. Dashboard にアクセス
+
+- 開発環境: `http://localhost:4321`
+- nginx 使用時: `https://yourdomain.com`
+
+Discord OAuth2 でログインし、サーバー設定ページでチャンネルごとの応答設定ができますわ！
+
+### ローカルで動かす場合（Bot のみ）
 
 `npm run compile && npm start`
 
-### Dockerを利用する場合
+### Dockerを利用する場合（従来版）
 
 1. `cp compose.yml.example compose.yml` を実行
 2. `docker compose up -d` で立ち上がります
@@ -141,11 +212,85 @@ docker compose exec redis redis-cli keys "app:guild:*:joined"
 docker compose restart dashboard
 ```
 
+### バックアップと復旧
+
+Dashboard v2.0 では **named volume** 方式でデータを永続化していますわ。
+
+#### 定期バックアップ（推奨: 日次）
+
+```bash
+# SQLite (Dashboard 設定データ) のバックアップ
+docker run --rm \
+  -v twitterrx_dashboard_data:/source:ro \
+  -v $(pwd)/backup:/backup \
+  alpine tar cvf /backup/dashboard-$(date +%Y%m%d).tar -C /source .
+
+# Redis (キャッシュ・セッション) のバックアップ
+docker run --rm \
+  -v twitterrx_redis_data:/source:ro \
+  -v $(pwd)/backup:/backup \
+  alpine tar cvf /backup/redis-$(date +%Y%m%d).tar -C /source .
+```
+
+#### 復旧手順
+
+**SQLite が破損した場合**:
+
+```bash
+# Dashboard を停止
+docker compose stop dashboard
+
+# バックアップから復元（YYYYMMDD を実際の日付に置き換え）
+docker run --rm \
+  -v twitterrx_dashboard_data:/target \
+  -v $(pwd)/backup:/backup \
+  alpine tar xvf /backup/dashboard-YYYYMMDD.tar -C /target
+
+# Dashboard を再起動
+docker compose start dashboard
+```
+
+**Redis が消えた場合**:
+
+```bash
+# Dashboard を再起動すると SQLite → Redis への reseed が実行されます
+docker compose restart dashboard
+
+# Bot を再起動すると joined キーが復旧します
+docker compose restart twitter-rx
+```
+
+**両方消えた場合**:
+
+```bash
+# 1. SQLite を先に復元
+docker compose stop dashboard
+docker run --rm \
+  -v twitterrx_dashboard_data:/target \
+  -v $(pwd)/backup:/backup \
+  alpine tar xvf /backup/dashboard-YYYYMMDD.tar -C /target
+
+# 2. Dashboard を起動（reseed が発動）
+docker compose start dashboard
+
+# 3. Bot を起動（joined が復旧）
+docker compose start twitter-rx
+```
+
+#### バックアップの保持期間
+
+| データ | 推奨保持期間 | 理由 |
+|--------|--------------|------|
+| SQLite | 30日以上 | 設定の永続データ、復旧に必須 |
+| Redis | 7日程度 | reseed で復旧可能なため短めでも可 |
+
 ### 環境変数による挙動制御
 
 | 変数 | 説明 | デフォルト |
 |------|------|-----------|
 | `REDIS_DOWN_FALLBACK` | Redis 障害時の挙動。`deny`: 全無視、`allow`: 全許可 | `deny` |
-| `ENABLE_ORPHAN_CLEANUP` | 起動時の孤立キー掃除 | `true` |
+| `CONFIG_NOT_FOUND_FALLBACK` | 設定未作成時の挙動。`deny`: 全無視、`allow`: 全許可 | `deny` |
+| `ENABLE_ORPHAN_CLEANUP` | 起動時の孤立キー掃除 | `false` |
+| `AUDIT_LOG_RETENTION_DAYS` | 監査ログ保持日数（0 で無制限） | `180` |
 
 詳細な仕様は [docs/DASHBOARD_SPEC.md](./docs/DASHBOARD_SPEC.md) を参照してください。
