@@ -13,6 +13,7 @@ import {
 import { DiscordEmbedBuilder } from "./EmbedBuilder";
 import { ITwitterAdapter } from "@/adapters/twitter/BaseTwitterAdapter";
 import { Tweet } from "@/core/models/Tweet";
+import { ChannelConfigService } from "@/core/services/ChannelConfigService";
 import { MediaHandler } from "@/core/services/MediaHandler";
 import { TweetProcessor } from "@/core/services/TweetProcessor";
 import { IReplyLogger } from "@/db/replyLogger";
@@ -34,6 +35,10 @@ export interface IVideoDownloader {
  * ツイートURLを含むメッセージを処理してEmbedを返信
  */
 export class MessageHandler {
+  // P1: メッセージ受信時の低頻度 channels リフレッシュ用
+  private readonly lastChannelCheck: Map<string, number> = new Map();
+  private readonly CHANNEL_CHECK_INTERVAL = 5 * 60 * 1000; // 5分
+
   constructor(
     private readonly processor: TweetProcessor,
     private readonly twitterAdapter: ITwitterAdapter,
@@ -42,7 +47,8 @@ export class MessageHandler {
     private readonly fileManager: IFileManager,
     private readonly videoDownloader: IVideoDownloader,
     private readonly replyLogger: IReplyLogger,
-    private readonly tmpDirBase: string
+    private readonly tmpDirBase: string,
+    private readonly channelConfigService?: ChannelConfigService
   ) {}
 
   /**
@@ -56,6 +62,25 @@ export class MessageHandler {
     // ボットメッセージや自身のメッセージは無視
     if (this.shouldIgnore(client, message)) {
       return;
+    }
+
+    // P0: チャンネル許可チェック
+    if (this.channelConfigService && message.guildId) {
+      const isAllowed = await this.channelConfigService.isChannelAllowed(message.guildId, message.channelId);
+
+      if (!isAllowed) {
+        logger.debug(
+          `[MessageHandler] Channel ${message.channelId} in guild ${message.guildId} is not whitelisted, ignoring`
+        );
+        return;
+      }
+
+      // P1: メッセージ受信時の低頻度 channels リフレッシュ
+      if (message.guild) {
+        this.maybeRefreshChannels(message.guild).catch((err) => {
+          logger.error(`[MessageHandler] Failed to refresh channels for guild ${message.guildId}:`, err);
+        });
+      }
     }
 
     // URLを抽出
@@ -410,5 +435,59 @@ export class MessageHandler {
       return sentMessage.id;
     }
     return null;
+  }
+
+  /**
+   * P1: メッセージ受信時の低頻度 channels リフレッシュ
+   * 最後のチェックから5分以上経過している場合のみ実行
+   */
+  private async maybeRefreshChannels(guild: Message["guild"]): Promise<void> {
+    if (!guild) return;
+
+    const lastCheck = this.lastChannelCheck.get(guild.id) ?? 0;
+    if (Date.now() - lastCheck < this.CHANNEL_CHECK_INTERVAL) {
+      return;
+    }
+
+    this.lastChannelCheck.set(guild.id, Date.now());
+    await this.checkAndRefreshChannels(guild);
+  }
+
+  /**
+   * P1: channels の再取得チェックと実行
+   * Redis の refresh リクエストキーを確認し、必要に応じて更新
+   */
+  private async checkAndRefreshChannels(guild: Message["guild"]): Promise<void> {
+    if (!guild) return;
+
+    try {
+      const redis = (await import("@/db/init")).redis;
+
+      // refresh リクエストキーの確認
+      const shouldRefresh = await redis.get(`app:guild:${guild.id}:channels:refresh`);
+
+      if (shouldRefresh) {
+        // チャンネル情報を再取得
+        const channels = await guild.channels.fetch();
+        const textChannels = channels
+          .filter((ch) => ch?.type === ChannelType.GuildText)
+          .map((ch) => ({
+            id: ch!.id,
+            name: ch!.name,
+          }));
+
+        // Redis に保存
+        await redis.setEx(`app:guild:${guild.id}:channels`, 60 * 60, JSON.stringify(textChannels));
+
+        // refresh リクエストキーを削除
+        await redis.del(`app:guild:${guild.id}:channels:refresh`);
+
+        logger.info(
+          `[MessageHandler] Refreshed channels for guild ${guild.id} by request (${textChannels.length} channels)`
+        );
+      }
+    } catch (err) {
+      logger.error(`[MessageHandler] Failed to check/refresh channels for guild ${guild.id}:`, err);
+    }
   }
 }
