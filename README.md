@@ -83,3 +83,48 @@ tests/
 
 このプロジェクトは軽量レイヤードアーキテクチャを採用しています。
 詳細は [ARCHITECTURE.md](./ARCHITECTURE.md) を参照してください。
+
+## トラブルシューティング
+
+Dashboard 機能を使用している場合の障害対応クイックリファレンスです。
+
+### 症状別 対応フロー
+
+| 症状 | 原因の可能性 | 確認コマンド | 復旧手順 |
+|------|-------------|-------------|---------|
+| Bot が全く反応しない | Redis ダウン | `docker compose exec redis redis-cli ping` | `docker compose restart redis` |
+| 設定変更が反映されない | pub/sub 切断 | ログで `Subscribe` を確認 | `docker compose restart twitter-rx` |
+| Dashboard にログインできない | Redis ダウン or セッション期限切れ | Redis ping 確認 | Redis 再起動 or 再ログイン |
+| 設定が「全許可」に戻った | Redis キー消失 | 設定キー確認 | `docker compose restart dashboard` |
+
+### 確認コマンド集
+
+```bash
+# Redis 状態確認
+docker compose exec redis redis-cli ping
+# 期待値: PONG
+
+# Bot のヘルスチェックログ確認
+docker compose logs twitter-rx | grep -E "(Health|HEALTH|Subscribe|subscribe)"
+
+# 設定キーの存在確認
+docker compose exec redis redis-cli keys "app:guild:*:config" | head -10
+
+# 特定ギルドの設定確認（YOUR_GUILD_ID を実際の ID に置き換え）
+docker compose exec redis redis-cli get "app:guild:YOUR_GUILD_ID:config"
+
+# Bot 参加状態確認
+docker compose exec redis redis-cli keys "app:guild:*:joined"
+
+# Dashboard 強制 reseed（Redis キー消失時）
+docker compose restart dashboard
+```
+
+### 環境変数による挙動制御
+
+| 変数 | 説明 | デフォルト |
+|------|------|-----------|
+| `REDIS_DOWN_FALLBACK` | Redis 障害時の挙動。`deny`: 全無視、`allow`: 全許可 | `deny` |
+| `ENABLE_ORPHAN_CLEANUP` | 起動時の孤立キー掃除 | `true` |
+
+詳細な仕様は [docs/DASHBOARD_SPEC.md](./docs/DASHBOARD_SPEC.md) を参照してください。
