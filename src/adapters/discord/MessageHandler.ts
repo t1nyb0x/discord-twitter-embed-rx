@@ -51,6 +51,8 @@ export class MessageHandler {
    * @param message 受信メッセージ
    */
   async handleMessage(client: Client, message: Message): Promise<void> {
+    const startTime = Date.now();
+
     // ボットメッセージや自身のメッセージは無視
     if (this.shouldIgnore(client, message)) {
       return;
@@ -62,6 +64,10 @@ export class MessageHandler {
       return;
     }
 
+    logger.info("Message received with Twitter URLs", {
+      urlCount: urls.length,
+    });
+
     // タイピングインジケーターを表示
     if (message.channel.type === ChannelType.GuildText) {
       await message.channel.sendTyping();
@@ -69,6 +75,12 @@ export class MessageHandler {
 
     // スポイラータグの有無で分類
     const { spoiler, normal } = this.processor.categorizeBySpoiler(urls, message.content);
+
+    logger.debug("URLs categorized", {
+      normalUrls: normal.length,
+      spoilerUrls: spoiler.length,
+      messageId: message.id,
+    });
 
     // 元メッセージの埋め込みを抑制
     await message.suppressEmbeds(true);
@@ -78,6 +90,13 @@ export class MessageHandler {
 
     // スポイラーURLの処理
     await this.processUrls(client, message, spoiler, true);
+
+    const duration = Date.now() - startTime;
+    logger.info("Message processing completed", {
+      messageId: message.id,
+      totalUrls: urls.length,
+      duration: `${duration}ms`,
+    });
   }
 
   /**
@@ -98,11 +117,25 @@ export class MessageHandler {
    * @param isSpoiler スポイラーかどうか
    */
   private async processUrls(client: Client, message: Message, urls: string[], isSpoiler: boolean): Promise<void> {
+    if (urls.length === 0) return;
+
+    logger.debug(`Processing ${urls.length} ${isSpoiler ? "spoiler" : "normal"} URLs`, {
+      messageId: message.id,
+      urlCount: urls.length,
+      isSpoiler,
+    });
+
     for (const url of urls) {
       try {
+        logger.debug("Processing single URL", { url, messageId: message.id, isSpoiler });
         await this.processSingleUrl(client, message, url, isSpoiler);
+        logger.debug("URL processing completed", { url, messageId: message.id });
       } catch (error) {
-        logger.error(`Failed to process URL ${url}`, { error: error instanceof Error ? error.message : String(error) });
+        logger.error(`Failed to process URL ${url}`, {
+          error: error instanceof Error ? error.message : String(error),
+          messageId: message.id,
+          url,
+        });
         const replyMessage = await message.reply({
           content: "ツイートの処理中にエラーが発生しました。",
           allowedMentions: { repliedUser: false },
