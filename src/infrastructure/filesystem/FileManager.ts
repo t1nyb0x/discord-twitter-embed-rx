@@ -1,6 +1,7 @@
 import fs from "node:fs/promises";
 import path from "node:path";
 import { IFileManager } from "@/adapters/discord/MessageHandler";
+import logger from "@/utils/logger";
 
 /**
  * ファイルシステム操作を担当
@@ -15,10 +16,13 @@ export class FileManager implements IFileManager {
   async createTempDirectory(): Promise<string> {
     try {
       await fs.mkdir(this.baseTmpDir, { recursive: true });
-      console.log(`Temporary directory created: ${this.baseTmpDir}`);
+      logger.debug(`Temporary directory created: ${this.baseTmpDir}`);
       return this.baseTmpDir;
     } catch (error) {
-      console.error(`Failed to create temp directory: ${error}`);
+      logger.error("Failed to create temp directory", {
+        error: error instanceof Error ? error.message : String(error),
+        path: this.baseTmpDir,
+      });
       throw error;
     }
   }
@@ -31,10 +35,13 @@ export class FileManager implements IFileManager {
   async createDirectory(dirPath: string): Promise<string> {
     try {
       await fs.mkdir(dirPath, { recursive: true });
-      console.log(`Directory created: ${dirPath}`);
+      logger.debug(`Directory created: ${dirPath}`);
       return dirPath;
     } catch (error) {
-      console.error(`Failed to create directory: ${error}`);
+      logger.error("Failed to create directory", {
+        error: error instanceof Error ? error.message : String(error),
+        path: dirPath,
+      });
       throw error;
     }
   }
@@ -46,9 +53,12 @@ export class FileManager implements IFileManager {
   async removeTempDirectory(dir: string): Promise<void> {
     try {
       await fs.rm(dir, { recursive: true });
-      console.log(`Temporary directory removed: ${dir}`);
+      logger.debug(`Temporary directory removed: ${dir}`);
     } catch (error) {
-      console.error(`Failed to remove temp directory: ${error}`);
+      logger.error("Failed to remove temp directory", {
+        error: error instanceof Error ? error.message : String(error),
+        path: dir,
+      });
       // ディレクトリ削除の失敗は致命的ではないのでエラーをスローしない
     }
   }
@@ -63,7 +73,10 @@ export class FileManager implements IFileManager {
       const files = await fs.readdir(dir);
       return files;
     } catch (error) {
-      console.error(`Failed to list files in directory: ${error}`);
+      logger.error("Failed to list files in directory", {
+        error: error instanceof Error ? error.message : String(error),
+        path: dir,
+      });
       return [];
     }
   }

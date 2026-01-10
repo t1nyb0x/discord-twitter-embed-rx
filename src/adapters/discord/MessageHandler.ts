@@ -16,6 +16,7 @@ import { Tweet } from "@/core/models/Tweet";
 import { MediaHandler } from "@/core/services/MediaHandler";
 import { TweetProcessor } from "@/core/services/TweetProcessor";
 import { IReplyLogger } from "@/db/replyLogger";
+import logger from "@/utils/logger";
 
 export interface IFileManager {
   createTempDirectory(): Promise<string>;
@@ -50,6 +51,8 @@ export class MessageHandler {
    * @param message 受信メッセージ
    */
   async handleMessage(client: Client, message: Message): Promise<void> {
+    const startTime = Date.now();
+
     // ボットメッセージや自身のメッセージは無視
     if (this.shouldIgnore(client, message)) {
       return;
@@ -61,6 +64,10 @@ export class MessageHandler {
       return;
     }
 
+    logger.info("Message received with Twitter URLs", {
+      urlCount: urls.length,
+    });
+
     // タイピングインジケーターを表示
     if (message.channel.type === ChannelType.GuildText) {
       await message.channel.sendTyping();
@@ -68,6 +75,12 @@ export class MessageHandler {
 
     // スポイラータグの有無で分類
     const { spoiler, normal } = this.processor.categorizeBySpoiler(urls, message.content);
+
+    logger.debug("URLs categorized", {
+      normalUrls: normal.length,
+      spoilerUrls: spoiler.length,
+      messageId: message.id,
+    });
 
     // 元メッセージの埋め込みを抑制
     await message.suppressEmbeds(true);
@@ -77,6 +90,13 @@ export class MessageHandler {
 
     // スポイラーURLの処理
     await this.processUrls(client, message, spoiler, true);
+
+    const duration = Date.now() - startTime;
+    logger.info("Message processing completed", {
+      messageId: message.id,
+      totalUrls: urls.length,
+      duration: `${duration}ms`,
+    });
   }
 
   /**
@@ -97,11 +117,25 @@ export class MessageHandler {
    * @param isSpoiler スポイラーかどうか
    */
   private async processUrls(client: Client, message: Message, urls: string[], isSpoiler: boolean): Promise<void> {
+    if (urls.length === 0) return;
+
+    logger.debug(`Processing ${urls.length} ${isSpoiler ? "spoiler" : "normal"} URLs`, {
+      messageId: message.id,
+      urlCount: urls.length,
+      isSpoiler,
+    });
+
     for (const url of urls) {
       try {
+        logger.debug("Processing single URL", { url, messageId: message.id, isSpoiler });
         await this.processSingleUrl(client, message, url, isSpoiler);
+        logger.debug("URL processing completed", { url, messageId: message.id });
       } catch (error) {
-        console.error(`Failed to process URL ${url}:`, error);
+        logger.error(`Failed to process URL ${url}`, {
+          error: error instanceof Error ? error.message : String(error),
+          messageId: message.id,
+          url,
+        });
         const replyMessage = await message.reply({
           content: "ツイートの処理中にエラーが発生しました。",
           allowedMentions: { repliedUser: false },
@@ -214,7 +248,7 @@ export class MessageHandler {
           allowedMentions: { repliedUser: false },
         });
       } catch (error) {
-        console.error("Error revealing spoiler:", error);
+        logger.error("Error revealing spoiler", { error: error instanceof Error ? error.message : String(error) });
         await interaction.editReply({
           content: "コンテンツの取得に失敗しました。",
           embeds,
@@ -265,7 +299,9 @@ export class MessageHandler {
         try {
           await this.fileManager.removeTempDirectory(uniqueTmpDir);
         } catch (error) {
-          console.error("Error removing temp directory:", error);
+          logger.error("Error removing temp directory", {
+            error: error instanceof Error ? error.message : String(error),
+          });
         }
       }, 30000); // 30秒後に削除
     }
@@ -313,7 +349,7 @@ export class MessageHandler {
 
       return messageIds;
     } catch (error) {
-      console.error("Error handling media:", error);
+      logger.error("Error handling media", { error: error instanceof Error ? error.message : String(error) });
       if (message.channel.type === ChannelType.GuildText) {
         await message.channel.send("ファイルの送信に失敗しました");
       }
@@ -334,11 +370,14 @@ export class MessageHandler {
       videos.map(async (video, index) => {
         const outputPath = path.join(tmpDir, `output${index + 1}.mp4`);
         try {
-          console.log("start download...");
+          logger.debug("Starting video download", { index, outputPath });
           await this.videoDownloader.download(video.url, outputPath);
-          console.log(`download completed: output${index + 1}.mp4`);
+          logger.debug(`Video download completed: output${index + 1}.mp4`);
         } catch (error) {
-          console.error(`Download error: ${error}`);
+          logger.error(`Video download error`, {
+            error: error instanceof Error ? error.message : String(error),
+            index,
+          });
         }
       })
     );
