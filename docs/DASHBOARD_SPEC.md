@@ -3902,7 +3902,7 @@ openssl rand -base64 32
 
 ## 13. マイルストーン
 
-### Phase 1: 基盤構築（P0 対応込み）
+### Phase 1: 基盤構築（P0 対応込み）✅ **完了！**
 
 - [x] Dashboard ディレクトリ構成作成
 - [x] Astro + Preact 環境構築
@@ -3914,14 +3914,14 @@ openssl rand -base64 32
 - [x] Cookie 属性設定（HttpOnly, Secure, SameSite）
 - [x] **P0: ENCRYPTION_SALT 必須化（未設定時は起動失敗）**
 - [x] **P0: レート制限を Lua スクリプトで原子化**
-- [ ] **P0: 401 時の再ログイン導線 UI**
+- [x] **P0: 401 時の再ログイン導線 UI**
 - [x] **P0: Redis 再シード処理実装（Dashboard 起動時に SQLite→Redis）**
 - [x] **P1: API 共通ヘッダーで Cache-Control: no-store を強制（createApiResponse / createApiError）**
-- [ ] **P1: 404 エラー（BOT_NOT_JOINED_OR_OFFLINE）で Cache-Control: no-store 付与確認**
-- [ ] **P1: Redis reseed 時のメタキー（config_schema_version）導入**
-- [ ] **P1: reseed 時の部分キー欠落チェック（checkForMissingConfigs）**
-- [ ] **P1: 定期リコンシルジョブ（10分ごとに joined なギルドの config 補完）**
-- [ ] **P2: 監査ログ保持期間設定化（AUDIT_LOG_RETENTION_DAYS 環境変数）**
+- [x] **P1: 404 エラー（BOT_NOT_JOINED_OR_OFFLINE）で Cache-Control: no-store 付与確認**
+- [x] **P1: Redis reseed 時のメタキー（config_schema_version）導入**
+- [x] **P1: reseed 時の部分キー欠落チェック（checkForMissingConfigs）**
+- [x] **P1: 定期リコンシルジョブ（10分ごとに joined なギルドの config 補完）**
+- [x] **P2: 監査ログ保持期間設定化（AUDIT_LOG_RETENTION_DAYS 環境変数）**
 
 ### Phase 2: Bot 側統合（P0 対応込み）
 

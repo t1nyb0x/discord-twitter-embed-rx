@@ -13,6 +13,7 @@ import {
 import { DiscordEmbedBuilder } from "./EmbedBuilder";
 import { ITwitterAdapter } from "@/adapters/twitter/BaseTwitterAdapter";
 import { Tweet } from "@/core/models/Tweet";
+import { ChannelConfigService } from "@/core/services/ChannelConfigService";
 import { MediaHandler } from "@/core/services/MediaHandler";
 import { TweetProcessor } from "@/core/services/TweetProcessor";
 import { IReplyLogger } from "@/db/replyLogger";
@@ -42,7 +43,8 @@ export class MessageHandler {
     private readonly fileManager: IFileManager,
     private readonly videoDownloader: IVideoDownloader,
     private readonly replyLogger: IReplyLogger,
-    private readonly tmpDirBase: string
+    private readonly tmpDirBase: string,
+    private readonly channelConfigService?: ChannelConfigService
   ) {}
 
   /**
@@ -56,6 +58,18 @@ export class MessageHandler {
     // ボットメッセージや自身のメッセージは無視
     if (this.shouldIgnore(client, message)) {
       return;
+    }
+
+    // P0: チャンネル許可チェック
+    if (this.channelConfigService && message.guildId) {
+      const isAllowed = await this.channelConfigService.isChannelAllowed(message.guildId, message.channelId);
+
+      if (!isAllowed) {
+        logger.debug(
+          `[MessageHandler] Channel ${message.channelId} in guild ${message.guildId} is not whitelisted, ignoring`
+        );
+        return;
+      }
     }
 
     // URLを抽出

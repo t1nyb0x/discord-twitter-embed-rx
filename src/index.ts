@@ -1,14 +1,16 @@
 import fs from "node:fs";
 import path from "node:path";
-import { Client, GatewayIntentBits, Message, Partials } from "discord.js";
+import { Client, GatewayIntentBits, Message, Partials, ChannelType } from "discord.js";
 import config, { ROOT_DIR } from "./config/config";
 import { connectRedis } from "./db/connect";
 import { deleteReply, popReply } from "./db/replyLogger";
 import { DiscordEmbedBuilder } from "@/adapters/discord/EmbedBuilder";
 import { MessageHandler } from "@/adapters/discord/MessageHandler";
 import { TwitterAdapter } from "@/adapters/twitter/TwitterAdapter";
+import { ChannelConfigService } from "@/core/services/ChannelConfigService";
 import { MediaHandler } from "@/core/services/MediaHandler";
 import { TweetProcessor } from "@/core/services/TweetProcessor";
+import { RedisChannelConfigRepository } from "@/infrastructure/db/RedisChannelConfigRepository";
 import { RedisReplyLogger } from "@/infrastructure/db/RedisReplyLogger";
 import { FileManager } from "@/infrastructure/filesystem/FileManager";
 import { HttpClient } from "@/infrastructure/http/HttpClient";
@@ -65,6 +67,10 @@ const fileManager = new FileManager(tmpDir);
 const videoDownloader = new VideoDownloader();
 const replyLogger = new RedisReplyLogger();
 
+// P0: Channel Config Repository & Service
+const channelConfigRepository = new RedisChannelConfigRepository();
+const channelConfigService = new ChannelConfigService(channelConfigRepository);
+
 // Core層
 const tweetProcessor = new TweetProcessor();
 const mediaHandler = new MediaHandler(httpClient, config.MEDIA_MAX_FILE_SIZE);
@@ -80,7 +86,8 @@ const messageHandler = new MessageHandler(
   fileManager,
   videoDownloader,
   replyLogger,
-  tmpDir
+  tmpDir,
+  channelConfigService
 );
 
 // === Create discord bot client ===
@@ -103,10 +110,75 @@ client.on("clientReady", async () => {
   }
   logger.info(`Logged in as ${client.user.tag}`);
 
+  // P0: 起動時ヘルスチェック
+  const isHealthy = await channelConfigService.performHealthCheck();
+  if (!isHealthy) {
+    logger.error("[Bot] Channel config health check failed!");
+    // 劣化モードで続行（完全停止はしない）
+  }
+
+  // P0: guildCreate - joined フラグとチャンネルキャッシュを設定
+  for (const [guildId, guild] of client.guilds.cache) {
+    try {
+      const redis = (await import("@/db/init")).redis;
+
+      // joined フラグを設定
+      await redis.set(`app:guild:${guildId}:joined`, "1");
+
+      // チャンネル情報を取得してキャッシュ
+      const channels = await guild.channels.fetch();
+      const textChannels = channels
+        .filter((ch) => ch?.type === ChannelType.GuildText)
+        .map((ch) => ({
+          id: ch!.id,
+          name: ch!.name,
+        }));
+
+      await redis.setEx(
+        `app:guild:${guildId}:channels`,
+        60 * 60, // 1時間TTL
+        JSON.stringify(textChannels)
+      );
+
+      logger.info(`[Bot] Initialized guild ${guildId} (${guild.name}), ${textChannels.length} text channels cached`);
+    } catch (err) {
+      logger.error(`[Bot] Failed to initialize guild ${guildId}:`, err);
+    }
+  }
+
   updateStatus();
 
   // update per 5 min.
   setInterval(updateStatus, 5 * 60 * 1000);
+
+  // P0: channels定期リフレッシュ（10分ごと）
+  setInterval(
+    async () => {
+      for (const [guildId, guild] of client.guilds.cache) {
+        try {
+          const redis = (await import("@/db/init")).redis;
+          const channels = await guild.channels.fetch();
+          const textChannels = channels
+            .filter((ch) => ch?.type === ChannelType.GuildText)
+            .map((ch) => ({
+              id: ch!.id,
+              name: ch!.name,
+            }));
+
+          await redis.setEx(
+            `app:guild:${guildId}:channels`,
+            60 * 60, // 1時間TTL
+            JSON.stringify(textChannels)
+          );
+
+          logger.debug(`[Bot] Refreshed channels for guild ${guildId}`);
+        } catch (err) {
+          logger.error(`[Bot] Failed to refresh channels for guild ${guildId}:`, err);
+        }
+      }
+    },
+    10 * 60 * 1000
+  ); // 10分ごと
 });
 
 // On Message Create
@@ -144,6 +216,56 @@ client.on("messageDelete", async (m) => {
   }
 });
 
+// P0: guildCreate - Bot が新しいサーバーに参加した時
+client.on("guildCreate", async (guild) => {
+  try {
+    const redis = (await import("@/db/init")).redis;
+
+    // joined フラグを設定
+    await redis.set(`app:guild:${guild.id}:joined`, "1");
+
+    // チャンネル情報を取得してキャッシュ
+    const channels = await guild.channels.fetch();
+    const textChannels = channels
+      .filter((ch) => ch?.type === ChannelType.GuildText)
+      .map((ch) => ({
+        id: ch!.id,
+        name: ch!.name,
+      }));
+
+    await redis.setEx(
+      `app:guild:${guild.id}:channels`,
+      60 * 60, // 1時間TTL
+      JSON.stringify(textChannels)
+    );
+
+    logger.info(`[Bot] Joined guild ${guild.id} (${guild.name}), ${textChannels.length} text channels cached`);
+  } catch (err) {
+    logger.error(`[Bot] Failed to handle guildCreate for ${guild.id}:`, err);
+  }
+});
+
+// P0: guildDelete - Bot がサーバーから退出した時
+client.on("guildDelete", async (guild) => {
+  try {
+    const redis = (await import("@/db/init")).redis;
+
+    // P0: config は削除しない（再参加時の全許可防止）
+    // joined フラグのみ削除
+    await redis.del(`app:guild:${guild.id}:joined`);
+
+    // channels キャッシュは削除
+    await redis.del(`app:guild:${guild.id}:channels`);
+
+    // Repository側のキャッシュクリア
+    await channelConfigRepository.handleGuildDelete(guild.id);
+
+    logger.info(`[Bot] Left guild ${guild.id}, joined flag and channels cache cleared (config preserved)`);
+  } catch (err) {
+    logger.error(`[Bot] Failed to handle guildDelete for ${guild.id}:`, err);
+  }
+});
+
 // === Login ===
 client.login(token);
 connectRedis();
@@ -152,3 +274,34 @@ const updateStatus = () => {
   const serverCount = client.guilds.cache.size;
   client.user?.setActivity(`v${version}, 導入サーバー数: ${serverCount}`);
 };
+
+// P0: Graceful shutdown
+process.on("SIGINT", async () => {
+  logger.info("[Bot] Received SIGINT, shutting down gracefully...");
+  await shutdown();
+});
+
+process.on("SIGTERM", async () => {
+  logger.info("[Bot] Received SIGTERM, shutting down gracefully...");
+  await shutdown();
+});
+
+async function shutdown(): Promise<void> {
+  try {
+    // Channel Config Service のシャットダウン
+    await channelConfigService.shutdown();
+
+    // Redis 接続のクローズ
+    const redis = (await import("@/db/init")).redis;
+    await redis.quit();
+
+    // Discord Client のログアウト
+    client.destroy();
+
+    logger.info("[Bot] Graceful shutdown completed");
+    process.exit(0);
+  } catch (err) {
+    logger.error("[Bot] Error during shutdown:", err);
+    process.exit(1);
+  }
+}
