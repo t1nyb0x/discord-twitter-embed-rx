@@ -3989,9 +3989,11 @@ openssl rand -base64 32
   - [x] 409 Conflict の自動リロード処理
   - [x] 503 Degraded Mode の警告表示
 
-### Phase 4: デプロイ
+### Phase 4: デプロイ ✅ **完了！**
 
 - [x] Dashboard Dockerfile 作成
+  - [x] **P0: node:24-alpine → node:24-slim への移行（npm ci 高速化）**
+  - [x] better-sqlite3 ネイティブビルド対応（python3, make, g++ 追加）
 - [x] compose.yml 更新
   - [x] **P1: named volume 方式に統一**
 - [x] compose.yml.with-nginx 作成（nginx 込み版）
@@ -4007,9 +4009,23 @@ openssl rand -base64 32
   - [x] 認証フローの動作確認（login → callback → logout）
   - [x] セッション TTL・Cookie 属性の維持確認
   - [x] ドキュメント更新（CHANGELOG に移行理由を記載）
-- [ ] CI/CD パイプライン更新
+- [x] **P0: Bot 起動時の Redis 接続順序修正（connectRedis → login）**
+  - [x] joined フラグの正確な書き込み確保
+- [x] **P0: Dashboard セッション管理の修正**
+  - [x] `getAccessToken` のキー修正（app:session → lucia:session）
+  - [x] Response.redirect() の immutable エラー修正（全認証エンドポイント）
+  - [x] ビルド時 DB 接続エラー修正（Proxy による遅延初期化）
+  - [x] 日本語リダイレクト URL のエンコード対応
+- [x] CI/CD パイプライン更新
+  - [x] Dashboard ビルドジョブの追加（.github/workflows/ci.yml）
+  - [x] Dashboard Docker イメージのビルド・プッシュ（.github/workflows/push-image.yml）
+  - [x] hadolint による Dashboard Dockerfile のリント追加
+  - [x] GitHub Container Registry への両イメージプッシュ対応
 - [x] ドキュメント更新（README）
   - [x] バックアップ手順を named volume 前提に更新
+- [x] **P0: デバッグログの個人情報削除**
+  - [x] userId、sessionId を含むログの削除
+  - [x] 本番環境での個人情報保護対応
 
 ### Phase 5: 品質向上（P2）
 
