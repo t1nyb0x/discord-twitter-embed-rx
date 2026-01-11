@@ -17,9 +17,15 @@ jobs:
               with:
                 fetch-depth: 1
 
-            - uses: hadolint/hadolint-action@v3.3.0
+            - name: Lint Bot Dockerfile
+              uses: hadolint/hadolint-action@v3.3.0
               with:
                 dockerfile: Dockerfile
+
+            - name: Lint Dashboard Dockerfile
+              uses: hadolint/hadolint-action@v3.3.0
+              with:
+                dockerfile: dashboard/Dockerfile
 
     push-image:
         runs-on: ubuntu-latest
@@ -29,6 +35,8 @@ jobs:
             contents: read
         steps:
             - uses: actions/checkout@v6
+              with:
+                submodules: 'recursive'
 
             - name: Set Env
               run: |
@@ -38,10 +46,15 @@ jobs:
                     export TAG_NAME="latest"
                 fi
                 echo "PKG_TAG"=${DOCKER_BASE_NAME}:${TAG_NAME} >> ${GITHUB_ENV}
+                echo "PKG_TAG_DASHBOARD"=${DOCKER_BASE_NAME}-dashboard:${TAG_NAME} >> ${GITHUB_ENV}
 
-            - name: Build Image
+            - name: Build Bot Image
               run: |
                 docker build . -t "${PKG_TAG}"
+
+            - name: Build Dashboard Image
+              run: |
+                docker build -f dashboard/Dockerfile -t "${PKG_TAG_DASHBOARD}" .
 
             - name: Login to ghcr.io
               uses: docker/login-action@v3
@@ -50,6 +63,10 @@ jobs:
                 username: ${{ github.actor }}
                 password: ${{ secrets.GITHUB_TOKEN }}
               
-            - name: Push Image
+            - name: Push Bot Image
               run: |
                docker push "${PKG_TAG}"
+
+            - name: Push Dashboard Image
+              run: |
+               docker push "${PKG_TAG_DASHBOARD}"
