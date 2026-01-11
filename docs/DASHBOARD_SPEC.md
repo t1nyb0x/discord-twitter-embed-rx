@@ -4026,6 +4026,7 @@ openssl rand -base64 32
 
 ### Phase 5: 品質向上（P2）
 
+- [ ] Dashboardのロギング充実化
 - [ ] 監査ログ閲覧 UI
 - [ ] ガベージコレクション実装（Bot 起動時）
 - [ ] E2E テスト作成
