@@ -3989,7 +3989,7 @@ openssl rand -base64 32
   - [x] 409 Conflict の自動リロード処理
   - [x] 503 Degraded Mode の警告表示
 
-### Phase 4: デプロイ ✅ **完了！**
+### Phase 4: デプロイ
 
 - [x] Dashboard Dockerfile 作成
   - [x] **P0: node:24-alpine → node:24-slim への移行（npm ci 高速化）**
@@ -4023,9 +4023,6 @@ openssl rand -base64 32
   - [x] GitHub Container Registry への両イメージプッシュ対応
 - [x] ドキュメント更新（README）
   - [x] バックアップ手順を named volume 前提に更新
-- [x] **P0: デバッグログの個人情報削除**
-  - [x] userId、sessionId を含むログの削除
-  - [x] 本番環境での個人情報保護対応
 
 ### Phase 5: 品質向上（P2）
 
