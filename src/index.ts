@@ -267,8 +267,10 @@ client.on("guildDelete", async (guild) => {
 });
 
 // === Login ===
-client.login(token);
-connectRedis();
+(async () => {
+  await connectRedis();
+  await client.login(token);
+})();
 
 const updateStatus = () => {
   const serverCount = client.guilds.cache.size;
