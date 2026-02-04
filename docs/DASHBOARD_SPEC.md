@@ -4036,6 +4036,9 @@ openssl rand -base64 32
     - [x] `src/pages/api/guilds/[guildId]/channels.ts`
     - [x] `src/pages/api/auth/discord/callback.ts`
   - [x] エラー情報の詳細記録（stack trace、context情報）
+- [x] バグ解消
+  - [x] 設定保存処理
+  - [x] チャンネル一覧更新
 - [ ] 監査ログ閲覧 UI
 - [ ] ガベージコレクション実装（Bot 起動時）
 - [ ] E2E テスト作成

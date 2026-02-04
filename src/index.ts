@@ -15,6 +15,7 @@ import { RedisReplyLogger } from "@/infrastructure/db/RedisReplyLogger";
 import { FileManager } from "@/infrastructure/filesystem/FileManager";
 import { HttpClient } from "@/infrastructure/http/HttpClient";
 import { VideoDownloader } from "@/infrastructure/http/VideoDownloader";
+import { cleanupOrphanedConfigs } from "@/utils/cleanupOrphanedConfigs";
 import logger from "@/utils/logger";
 
 enum ApplicationMode {
@@ -144,6 +145,14 @@ client.on("clientReady", async () => {
     } catch (err) {
       logger.error(`[Bot] Failed to initialize guild ${guildId}:`, err);
     }
+  }
+
+  // P2: 孤立した config のクリーンアップ（オプション）
+  try {
+    const redis = (await import("@/db/init")).redis;
+    await cleanupOrphanedConfigs(client, redis);
+  } catch (err) {
+    logger.error("[Bot] Failed to cleanup orphaned configs:", err);
   }
 
   updateStatus();
