@@ -9,6 +9,8 @@ export const redis = createClient({
   url: process.env.REDIS_URL || "redis://localhost:6379",
 });
 
+export type AppRedisClient = typeof redis;
+
 redis.on("error", (err) =>
   logger.error("Redis Client Error", { error: err instanceof Error ? err.message : String(err) })
 );

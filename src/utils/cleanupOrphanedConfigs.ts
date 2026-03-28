@@ -6,7 +6,7 @@
  */
 
 import type { Client } from "discord.js";
-import type Redis from "ioredis";
+import type { AppRedisClient } from "@/db/init";
 import logger from "@/utils/logger";
 
 const ENABLE_ORPHAN_CLEANUP = process.env.ENABLE_ORPHAN_CLEANUP === "true";
@@ -20,7 +20,7 @@ const ENABLE_ORPHAN_CLEANUP = process.env.ENABLE_ORPHAN_CLEANUP === "true";
  * @param client Discord Client
  * @param redis Redis インスタンス
  */
-export async function cleanupOrphanedConfigs(client: Client, redis: Redis): Promise<void> {
+export async function cleanupOrphanedConfigs(client: Client, redis: AppRedisClient): Promise<void> {
   if (!ENABLE_ORPHAN_CLEANUP) {
     logger.info("[Cleanup] Orphan cleanup is disabled (set ENABLE_ORPHAN_CLEANUP=true to enable)");
     return;
@@ -38,8 +38,9 @@ export async function cleanupOrphanedConfigs(client: Client, redis: Redis): Prom
   try {
     do {
       // SCAN でキーを段階的に取得（Redis をブロックしない）
-      const [nextCursor, keys] = await redis.scan(cursor, "MATCH", "app:guild:*:joined", "COUNT", 100);
-      cursor = nextCursor;
+      const result = await redis.scan(cursor, { MATCH: "app:guild:*:joined", COUNT: 100 });
+      cursor = result.cursor;
+      const keys = result.keys;
 
       for (const key of keys) {
         const guildId = key.split(":")[2]; // app:guild:{id}:joined
