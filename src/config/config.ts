@@ -3,11 +3,12 @@ import path from "path";
 import { fileURLToPath } from "url";
 import yaml from "js-yaml";
 
+// ESM では import.meta.url から __dirname を取得
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 // ルートディレクトリ取得
-export const ROOT_DIR = path.dirname(__dirname);
+export const ROOT_DIR = path.resolve(__dirname, "../..");
 
 // ログ設定の型定義
 export interface LoggingConfig {
@@ -23,7 +24,7 @@ export interface AppConfig {
   LOGGING: LoggingConfig;
 }
 
-const configPath = path.join(path.dirname(ROOT_DIR), "/.config/config.yml");
+const configPath = path.join(ROOT_DIR, ".config/config.yml");
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 let config: any = {};
 try {

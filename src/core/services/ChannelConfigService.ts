@@ -1,0 +1,90 @@
+import type { ConfigResult, IChannelConfigRepository } from "@twitterrx/shared";
+import logger from "@/utils/logger";
+
+/**
+ * P0対応: フォールバック設定
+ */
+const REDIS_DOWN_FALLBACK = process.env.REDIS_DOWN_FALLBACK === "deny" ? "deny" : "allow";
+const CONFIG_NOT_FOUND_FALLBACK = process.env.CONFIG_NOT_FOUND_FALLBACK === "allow" ? "allow" : "deny";
+
+/**
+ * チャンネル設定サービス
+ * Bot側でチャンネル許可判定を行う
+ */
+export class ChannelConfigService {
+  constructor(private readonly repository: IChannelConfigRepository) {}
+
+  /**
+   * P0: isChannelAllowed で ConfigResult.kind に応じた分岐
+   * P0: error 時は REDIS_DOWN_FALLBACK を適用
+   */
+  async isChannelAllowed(guildId: string, channelId: string): Promise<boolean> {
+    try {
+      const result: ConfigResult = await this.repository.getConfig(guildId);
+
+      switch (result.kind) {
+        case "found": {
+          const config = result.data;
+
+          if (config.allowAllChannels) {
+            return true;
+          }
+
+          return config.whitelistedChannelIds.includes(channelId);
+        }
+
+        case "not_found":
+          // P0: 設定が見つからない場合は CONFIG_NOT_FOUND_FALLBACK を適用
+          logger.warn(
+            `[ChannelConfig] Config not found for guild ${guildId}, applying CONFIG_NOT_FOUND_FALLBACK: ${CONFIG_NOT_FOUND_FALLBACK}`
+          );
+          return CONFIG_NOT_FOUND_FALLBACK === "allow";
+
+        case "error":
+          // P0: Redis障害時はフォールバック設定を適用
+          logger.error(`[ChannelConfig] Error fetching config for guild ${guildId}: ${result.error.message}`);
+          logger.warn(`[ChannelConfig] Applying REDIS_DOWN_FALLBACK: ${REDIS_DOWN_FALLBACK}`);
+
+          if (REDIS_DOWN_FALLBACK === "deny") {
+            return false;
+          } else {
+            return true;
+          }
+
+        default: {
+          // TypeScript exhaustiveness check
+          const _exhaustive: never = result;
+          logger.error(`[ChannelConfig] Unexpected ConfigResult kind: ${JSON.stringify(_exhaustive)}`);
+          return REDIS_DOWN_FALLBACK === "allow";
+        }
+      }
+    } catch (err) {
+      // 予期しないエラー
+      logger.error(`[ChannelConfig] Unexpected error in isChannelAllowed:`, err);
+
+      // フォールバック設定を適用
+      return REDIS_DOWN_FALLBACK === "allow";
+    }
+  }
+
+  /**
+   * ヘルスチェック（起動時検証用）
+   */
+  async performHealthCheck(): Promise<boolean> {
+    if ("performHealthCheck" in this.repository && typeof this.repository.performHealthCheck === "function") {
+      return await this.repository.performHealthCheck();
+    }
+
+    logger.warn("[ChannelConfig] Repository does not support health check");
+    return true; // サポートしていない場合は通過
+  }
+
+  /**
+   * Graceful shutdown
+   */
+  async shutdown(): Promise<void> {
+    if ("shutdown" in this.repository && typeof this.repository.shutdown === "function") {
+      await this.repository.shutdown();
+    }
+  }
+}

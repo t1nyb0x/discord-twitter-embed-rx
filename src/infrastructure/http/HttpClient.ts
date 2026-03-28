@@ -2,6 +2,9 @@ import https from "node:https";
 import { IFileSizeChecker } from "@/core/services/MediaHandler";
 import logger from "@/utils/logger";
 
+const REQUEST_TIMEOUT_MS = 10_000;
+const MAX_RESPONSE_SIZE = 10 * 1024 * 1024; // 10MB
+
 /**
  * HTTPリクエストを担当
  */
@@ -39,6 +42,10 @@ export class HttpClient implements IFileSizeChecker {
         }
       });
 
+      req.setTimeout(REQUEST_TIMEOUT_MS, () => {
+        req.destroy(new Error(`HTTP HEAD request timed out after ${REQUEST_TIMEOUT_MS}ms`));
+      });
+
       req.on("error", (err) => {
         const duration = Date.now() - startTime;
         logger.error("HTTP HEAD request failed", { url, error: err.message, duration: `${duration}ms` });
@@ -58,11 +65,17 @@ export class HttpClient implements IFileSizeChecker {
     logger.debug("HTTP GET request started", { url });
 
     return new Promise((resolve, reject) => {
-      https
+      const req = https
         .get(url, (res) => {
           let data = "";
+          let dataSize = 0;
 
           res.on("data", (chunk) => {
+            dataSize += chunk.length;
+            if (dataSize > MAX_RESPONSE_SIZE) {
+              req.destroy(new Error(`Response exceeded maximum size of ${MAX_RESPONSE_SIZE} bytes`));
+              return;
+            }
             data += chunk;
           });
 
@@ -87,6 +100,10 @@ export class HttpClient implements IFileSizeChecker {
           logger.error("HTTP GET request error", { url, error: err.message, duration: `${duration}ms` });
           reject(err);
         });
+
+      req.setTimeout(REQUEST_TIMEOUT_MS, () => {
+        req.destroy(new Error(`HTTP GET request timed out after ${REQUEST_TIMEOUT_MS}ms`));
+      });
     });
   }
 }
