@@ -7,14 +7,14 @@ COPY ["package.json", "package-lock.json", "./"]
 
 # packages/shared をコピーしてビルド
 COPY ["./packages", "./packages"]
-RUN npm ci --workspace=@twitterrx/shared
-RUN npm run build --workspace=@twitterrx/shared
+RUN npm ci --workspace=@twitterrx/shared && \
+    npm run build --workspace=@twitterrx/shared
 
 # Bot のソースとビルド設定をコピー
 COPY ["tsconfig.json", "./"]
 COPY ["./src", "./src"]
-RUN npm ci
-RUN npm run compile
+RUN npm ci && \
+    npm run compile
 
 # 設定ファイルをコピー
 COPY ["./.config", "./.config"]
