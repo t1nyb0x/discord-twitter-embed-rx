@@ -24,6 +24,7 @@
     "test:e2e": "vitest run tests/e2e",
     "test:ui": "vitest --ui",
     "test:coverage": "vitest run --coverage",
+    "test:dashboard": "npm run test --workspace=@twitterrx/dashboard",
     "lint": "eslint src/index.ts"
   },
   "lint-staged": {
