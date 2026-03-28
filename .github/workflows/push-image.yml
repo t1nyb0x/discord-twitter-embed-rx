@@ -57,7 +57,7 @@ jobs:
                 docker build -f dashboard/Dockerfile -t "${PKG_TAG_DASHBOARD}" .
 
             - name: Login to ghcr.io
-              uses: docker/login-action@v3
+              uses: docker/login-action@v4
               with:
                 registry: ghcr.io
                 username: ${{ github.actor }}
