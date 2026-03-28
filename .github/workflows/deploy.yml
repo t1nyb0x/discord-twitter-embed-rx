@@ -18,6 +18,11 @@ jobs:
         run: |
           # 最新のリリースタグを取得
           TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "latest")
+          # セキュリティ: タグ名をサニタイズ（英数字、ドット、ハイフンのみ許可）
+          if ! echo "$TAG" | grep -qE '^[a-zA-Z0-9._-]+$'; then
+            echo "::error::Invalid tag format: ${TAG}"
+            exit 1
+          fi
           echo "tag=${TAG}" >> $GITHUB_OUTPUT
           echo "Using tag: ${TAG}"
 
@@ -38,5 +43,5 @@ jobs:
           SSH_PORT: ${{ secrets.SSH_PORT }}
           IMAGE_TAG: ${{ steps.get_tag.outputs.tag }}
         run: |
-          ssh -o StrictHostKeyChecking=no -i ~/.ssh/deploy_key $SSH_USER@$VPS_HOST -p $SSH_PORT \
-          "cd TwitterRX && export IMAGE_TAG=${IMAGE_TAG} && docker compose pull && docker compose down && docker compose up -d"
+          ssh -i ~/.ssh/deploy_key "$SSH_USER@$VPS_HOST" -p "$SSH_PORT" \
+          "cd TwitterRX && export IMAGE_TAG='${IMAGE_TAG}' && docker compose pull && docker compose down && docker compose up -d"
