@@ -1,5 +1,34 @@
 # Changelog
 
+## [Unreleased]
+
+### Added
+
+- **Dashboard v2.0 (Phase 4 - Deployment)**
+  - Docker Compose 3コンテナ構成（Bot / Dashboard / Redis）
+  - nginx リバースプロキシ対応（compose.yml.with-nginx）
+  - named volume 方式による永続化
+  - Oslo + Arctic への認証システム移行
+
+### Changed
+
+- **認証ライブラリの移行** (P0対応)
+  - lucia-auth から Oslo (セッション管理) + Arctic (OAuth2) へ移行
+  - 移行理由: lucia-auth の非推奨化に対応し、より軽量で保守性の高いライブラリへ移行
+  - セッション管理: Oslo の Session API を使用
+  - OAuth2: Arctic の Discord Provider を使用
+  - Cookie 属性・TTL は従来通り維持（7日間、HttpOnly, Secure, SameSite=Lax）
+
+### Technical Notes
+
+Oslo + Arctic への移行による変更点：
+- セッションIDの生成: `generateSessionId()` (Oslo の encodeBase32LowerCaseNoPadding 使用)
+- セッション検証: `validateSession()` (Redis から直接取得・検証)
+- OAuth2フロー: Arctic の `createAuthorizationURL()` / `validateAuthorizationCode()` を使用
+- Cookie 管理: `getSessionCookieAttributes()` でセキュア属性を制御
+
+---
+
 ## [1.16.0](https://github.com/t1nyb0x/discord-twitter-embed-rx/compare/v1.15.0...v1.16.0) (2026-01-10)
 
 

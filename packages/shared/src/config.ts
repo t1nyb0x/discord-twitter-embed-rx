@@ -1,0 +1,71 @@
+/**
+ * ギルド設定の型定義（Bot ↔ Dashboard 共有）
+ */
+
+/**
+ * Redisに保存されるギルド設定
+ */
+export interface GuildConfig {
+  /** ギルドID */
+  guildId: string;
+  /** 全チャンネル許可フラグ */
+  allowAllChannels: boolean;
+  /** ホワイトリスト化されたチャンネルID一覧 */
+  whitelistedChannelIds: string[];
+  /** 設定バージョン（楽観的ロック用） */
+  version: number;
+  /** 最終更新日時（ISO 8601形式） */
+  updatedAt: string;
+  /** 最終更新者のユーザーID */
+  updatedBy?: string;
+}
+
+/**
+ * チャンネル設定取得結果（三値型）
+ */
+export type ConfigResult =
+  | { kind: "found"; data: GuildConfig }
+  | { kind: "not_found" }
+  | { kind: "error"; error: Error };
+
+/**
+ * チャンネル設定リポジトリのインターフェース
+ */
+export interface IChannelConfigRepository {
+  /**
+   * ギルド設定を取得
+   * @param guildId ギルドID
+   * @returns 設定取得結果
+   */
+  getConfig(guildId: string): Promise<ConfigResult>;
+
+  /**
+   * ギルド設定を保存
+   * @param config 保存する設定
+   */
+  saveConfig(config: GuildConfig): Promise<void>;
+
+  /**
+   * 設定更新を通知（Redis Pub/Sub）
+   * @param guildId ギルドID
+   * @param version 新しいバージョン
+   */
+  notifyUpdate(guildId: string, version: number): Promise<void>;
+
+  /**
+   * チャンネルが許可されているか判定
+   * @param guildId ギルドID
+   * @param channelId チャンネルID
+   * @returns 許可されている場合 true
+   */
+  isChannelAllowed(guildId: string, channelId: string): Promise<boolean>;
+}
+
+/**
+ * Redis Pub/Subメッセージ型
+ */
+export interface ConfigUpdateMessage {
+  guildId: string;
+  version: number;
+  updatedAt: string;
+}

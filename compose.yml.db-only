@@ -3,10 +3,9 @@ services:
     container_name: Redis
     image: redis:8.2.2-alpine
     restart: always
-    ports:
-      - "6379:6379"
     volumes:
       - redis_data:/data
+    # 内部通信のみ、ポート公開なし
 
 volumes:
   redis_data:
