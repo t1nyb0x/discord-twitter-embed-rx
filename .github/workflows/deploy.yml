@@ -11,21 +11,6 @@ jobs:
     # push-imageワークフローが成功した場合のみ実行
     if: ${{ github.event.workflow_run.conclusion == 'success' }}
     steps:
-      - uses: actions/checkout@v6
-
-      - name: Get release tag
-        id: get_tag
-        run: |
-          # 最新のリリースタグを取得
-          TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "latest")
-          # セキュリティ: タグ名をサニタイズ（英数字、ドット、ハイフンのみ許可）
-          if ! echo "$TAG" | grep -qE '^[a-zA-Z0-9._-]+$'; then
-            echo "::error::Invalid tag format: ${TAG}"
-            exit 1
-          fi
-          echo "tag=${TAG}" >> $GITHUB_OUTPUT
-          echo "Using tag: ${TAG}"
-
       - name: Setup SSH
         env:
           SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
@@ -36,12 +21,21 @@ jobs:
           chmod 600 ~/.ssh/deploy_key
           echo "$SSH_KNOWN_HOSTS" > ~/.ssh/known_hosts
 
-      - name: Restart Application
+      - name: Deploy Application
         env:
           SSH_USER: ${{ secrets.SSH_USER }}
           VPS_HOST: ${{ secrets.VPS_HOST }}
           SSH_PORT: ${{ secrets.SSH_PORT }}
-          IMAGE_TAG: ${{ steps.get_tag.outputs.tag }}
         run: |
           ssh -i ~/.ssh/deploy_key "$SSH_USER@$VPS_HOST" -p "$SSH_PORT" \
-          "cd TwitterRX && export IMAGE_TAG='${IMAGE_TAG}' && docker compose pull && docker compose down && docker compose up -d"
+          "cd TwitterRX && docker compose pull && docker compose up -d --force-recreate --remove-orphans"
+
+      - name: Verify Deployment
+        env:
+          SSH_USER: ${{ secrets.SSH_USER }}
+          VPS_HOST: ${{ secrets.VPS_HOST }}
+          SSH_PORT: ${{ secrets.SSH_PORT }}
+        run: |
+          sleep 10
+          ssh -i ~/.ssh/deploy_key "$SSH_USER@$VPS_HOST" -p "$SSH_PORT" \
+          "cd TwitterRX && docker compose ps --format 'table {{.Name}}\t{{.Status}}'"

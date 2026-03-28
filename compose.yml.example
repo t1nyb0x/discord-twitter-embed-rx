@@ -1,20 +1,82 @@
+# =============================================================================
+# TwitterRX 本番環境用 Docker Compose（GHCR イメージベース）
+# =============================================================================
+#
+# VPS 側に以下のファイルを配置してください:
+#
+#   ~/TwitterRX/
+#   ├── compose.yml          ← このファイルをコピー
+#   ├── .env                 ← Bot 用環境変数（DISCORD_TOKEN 等）
+#   └── dashboard/
+#       └── .env             ← Dashboard 用環境変数（OAuth2, SESSION_SECRET 等）
+#
+# 前提: jwilder/nginx-proxy が別 compose で起動済みで、
+#       "proxy-network" Docker network が存在すること。
+#
+# 起動: docker compose up -d
+# 更新: docker compose pull && docker compose up -d --force-recreate --remove-orphans
+# =============================================================================
+
 services:
+  # Discord Bot
   twitter-rx:
-    container_name: TwitterEmbedRX
+    container_name: TwitterRX_Bot
     image: ghcr.io/t1nyb0x/discord-twitter-embed-rx:${IMAGE_TAG:-latest}
     restart: always
     env_file:
       - .env
+    environment:
+      - REDIS_URL=redis://redis:6379
+    depends_on:
+      - redis
+    networks:
+      - twitterrx_network
     volumes:
-      - ./logs:/app/logs
+      - ./logs:/app/bot/logs
       - ./.config:/app/.config:ro
+
+  # Dashboard（Astro SSR）
+  dashboard:
+    container_name: TwitterRX_Dashboard
+    image: ghcr.io/t1nyb0x/discord-twitter-embed-rx-dashboard:${IMAGE_TAG:-latest}
+    restart: always
+    env_file:
+      - ./dashboard/.env
+    environment:
+      - REDIS_URL=redis://redis:6379
+      - LOG_DIR=/app/logs/dashboard
+      # jwilder/nginx-proxy 用
+      - VIRTUAL_HOST=${DASHBOARD_DOMAIN}
+      - VIRTUAL_PORT=4321
+    expose:
+      - "4321"
+    depends_on:
+      - redis
+    networks:
+      - twitterrx_network
+      - proxy-network
+    volumes:
+      - dashboard_data:/app/dashboard/data
+      - ./logs/dashboard:/app/logs
+
+  # Redis
   redis:
-    container_name: Redis
+    container_name: TwitterRX_Redis
     image: redis:8.2.2-alpine
     restart: always
+    command: redis-server --appendonly yes
     volumes:
       - redis_data:/data
+    networks:
+      - twitterrx_network
     # 内部通信のみ、ポート公開なし
+
+networks:
+  twitterrx_network:
+    driver: bridge
+  proxy-network:
+    external: true
 
 volumes:
   redis_data:
+  dashboard_data:
