@@ -3,5 +3,8 @@
   "baseBranches": ["develop"],
   "extends": [
     "config:recommended"
+  ],
+  "postUpdateOptions": [
+    "npmDedupe"
   ]
 }
