@@ -38,4 +38,4 @@ jobs:
         run: |
           sleep 10
           ssh -i ~/.ssh/deploy_key "$SSH_USER@$VPS_HOST" -p "$SSH_PORT" \
-          "cd TwitterRX && docker compose ps --format 'table {{.Name}}\t{{.Status}}'"
+          "cd TwitterRX && docker compose ps"
