@@ -1,5 +1,37 @@
 # Changelog
 
+## [2.0.0](https://github.com/t1nyb0x/discord-twitter-embed-rx/compare/v1.16.0...v2.0.0) (2026-03-30)
+
+
+### ⚠ BREAKING CHANGES
+
+* ダッシュボード機能実装
+
+### Features
+
+* feat:  ([509a8d2](https://github.com/t1nyb0x/discord-twitter-embed-rx/commit/509a8d2c44cc16ea2a1d993f4c5ce22e384617f2))
+* add dashboard as git submodule ([6f19081](https://github.com/t1nyb0x/discord-twitter-embed-rx/commit/6f19081681fc1cef36f95e6d6c774ef8fc0a92a9))
+* add shared types package for Bot and Dashboard ([cc38f5b](https://github.com/t1nyb0x/discord-twitter-embed-rx/commit/cc38f5b5d8ea64e92fb9a65f013c2946ee7a4960))
+* Dashboard UI実装 ([5186804](https://github.com/t1nyb0x/discord-twitter-embed-rx/commit/5186804a7a9023b56966c24c7d0458d00719e1d0))
+* Dashboard UI実装 ([97b1744](https://github.com/t1nyb0x/discord-twitter-embed-rx/commit/97b1744f03793c6a8e30e4cab2d7bef8fc747026))
+* Dashboard ロギング充実化 ([63646c6](https://github.com/t1nyb0x/discord-twitter-embed-rx/commit/63646c6a6874bc4a6fdbdc832bd8125e897d91a0))
+* GC実装、E2Eテスト作成 ([5912b7e](https://github.com/t1nyb0x/discord-twitter-embed-rx/commit/5912b7e12e43912e7f4d8ad4e99619e6627071f1))
+* ダッシュボード機能実装 ([08ac961](https://github.com/t1nyb0x/discord-twitter-embed-rx/commit/08ac96102c798f290bdb97b16d8eb72de629f098))
+* ダッシュボード機能更新 ([54a7f85](https://github.com/t1nyb0x/discord-twitter-embed-rx/commit/54a7f85bcd2da423dbc6eeeda65615c77bbdba8e))
+* ダッシュボード機能更新 ([359e6c9](https://github.com/t1nyb0x/discord-twitter-embed-rx/commit/359e6c9364e4669d3877ca1c22864685fd29994a))
+* デプロイ設定周り作成 ([c938dc7](https://github.com/t1nyb0x/discord-twitter-embed-rx/commit/c938dc7036224c9512aa2a3d74dad71c4bfa16a2))
+* メッセージ受診時の低頻度channelsリフレッシュ実装 ([0318677](https://github.com/t1nyb0x/discord-twitter-embed-rx/commit/03186778fa0e269fd14be82dc724a1b497453579))
+* 基盤構築 ([4f98024](https://github.com/t1nyb0x/discord-twitter-embed-rx/commit/4f98024f10ed75c1278ff0577f0f5e0aacbd88f5))
+
+
+### Bug Fixes
+
+* Redisのポート開放を削除 ([f54ab2d](https://github.com/t1nyb0x/discord-twitter-embed-rx/commit/f54ab2d2b6911875052bc69573ca0545de10ffd7))
+* Redis書き込みタイミング修正 ([08fcbe9](https://github.com/t1nyb0x/discord-twitter-embed-rx/commit/08fcbe906fc355bc7b0ef798e69a0e4127ebfda7))
+* Redis書き込みタイミング修正 ([9d1c1ae](https://github.com/t1nyb0x/discord-twitter-embed-rx/commit/9d1c1ae305da708bd3ad8fbdf9dbf4d008e2830d))
+* タイムアウト、サイズ制限追加 ([c9d7aa0](https://github.com/t1nyb0x/discord-twitter-embed-rx/commit/c9d7aa0e2336f073967fbf33550f1daee73c97ee))
+* 型エラー修正 ([74b35d5](https://github.com/t1nyb0x/discord-twitter-embed-rx/commit/74b35d5c6aab4561b7c8bda4ed18c20c4cf13c39))
+
 ## [Unreleased]
 
 ### Added
