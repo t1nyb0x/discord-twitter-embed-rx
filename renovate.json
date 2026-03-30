@@ -6,5 +6,6 @@
   ],
   "postUpdateOptions": [
     "npmDedupe"
-  ]
+  ],
+  "initSubmodules": true
 }
