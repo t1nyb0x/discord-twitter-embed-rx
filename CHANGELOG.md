@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.0.1](https://github.com/t1nyb0x/discord-twitter-embed-rx/compare/v2.0.0...v2.0.1) (2026-03-30)
+
+
+### Bug Fixes
+
+* Embedの構築処理を修正 ([8e7972c](https://github.com/t1nyb0x/discord-twitter-embed-rx/commit/8e7972ce567a3f19d373e2022db2170da6a3f698))
+
 ## [2.0.0](https://github.com/t1nyb0x/discord-twitter-embed-rx/compare/v1.16.0...v2.0.0) (2026-03-30)
 
 
