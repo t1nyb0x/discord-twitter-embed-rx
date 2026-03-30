@@ -7,6 +7,7 @@ import {
   ButtonStyle,
   ChannelType,
   Client,
+  DiscordAPIError,
   Message,
   EmbedBuilder,
 } from "discord.js";
@@ -156,11 +157,16 @@ export class MessageHandler {
         await this.processSingleUrl(client, message, url, isSpoiler);
         logger.debug("URL processing completed", { url, messageId: message.id });
       } catch (error) {
-        logger.error(`Failed to process URL ${url}`, {
+        const errorDetails: Record<string, unknown> = {
           error: error instanceof Error ? error.message : String(error),
           messageId: message.id,
           url,
-        });
+        };
+        if (error instanceof DiscordAPIError) {
+          errorDetails.httpStatus = error.status;
+          errorDetails.code = error.code;
+        }
+        logger.error(`Failed to process URL ${url}`, errorDetails);
         const replyMessage = await message.reply({
           content: "ツイートの処理中にエラーが発生しました。",
           allowedMentions: { repliedUser: false },
@@ -297,12 +303,12 @@ export class MessageHandler {
     try {
       await this.fileManager.createDirectory(uniqueTmpDir);
 
-      // ファイルサイズでフィルタリング
-      const { downloadable, tooLarge } = await this.mediaHandler.filterBySize(tweet.media);
+      // 動画のみファイルサイズでフィルタリング（画像はEmbedのサムネイルでのみ使用するためチェック不要）
+      const allVideos = this.mediaHandler.filterVideos(tweet.media);
+      const { downloadable, tooLarge } = await this.mediaHandler.filterBySize(allVideos);
 
       // ダウンロード可能な動画を処理
-      const videos = this.mediaHandler.filterVideos(downloadable);
-      await this.downloadVideos(videos, uniqueTmpDir);
+      await this.downloadVideos(downloadable, uniqueTmpDir);
 
       // ダウンロードしたファイルからAttachmentBuilderを作成
       const files = await this.fileManager.listFiles(uniqueTmpDir);
@@ -312,8 +318,7 @@ export class MessageHandler {
       }
 
       // 大きすぎるファイルのURLを収集
-      const largeVideos = this.mediaHandler.filterVideos(tooLarge);
-      const largeVideoUrls = largeVideos.map((v) => v.url);
+      const largeVideoUrls = tooLarge.map((v) => v.url);
 
       return { attachments, largeVideoUrls };
     } finally {
@@ -347,12 +352,12 @@ export class MessageHandler {
       // 一時ディレクトリを作成（ユニークなパスで）
       await this.fileManager.createDirectory(uniqueTmpDir);
 
-      // ファイルサイズでフィルタリング
-      const { downloadable, tooLarge } = await this.mediaHandler.filterBySize(tweet.media);
+      // 動画のみファイルサイズでフィルタリング（画像はEmbedのサムネイルでのみ使用するためチェック不要）
+      const allVideos = this.mediaHandler.filterVideos(tweet.media);
+      const { downloadable, tooLarge } = await this.mediaHandler.filterBySize(allVideos);
 
       // ダウンロード可能な動画を処理
-      const videos = this.mediaHandler.filterVideos(downloadable);
-      await this.downloadVideos(videos, uniqueTmpDir);
+      await this.downloadVideos(downloadable, uniqueTmpDir);
 
       // ダウンロードしたファイルを送信
       const files = await this.fileManager.listFiles(uniqueTmpDir);
@@ -364,8 +369,7 @@ export class MessageHandler {
       }
 
       // 大きすぎるファイルはURLを送信
-      const largeVideos = this.mediaHandler.filterVideos(tooLarge);
-      for (const video of largeVideos) {
+      for (const video of tooLarge) {
         if (message.channel.type === ChannelType.GuildText) {
           const urlMessage = await message.channel.send(video.url);
           messageIds.push(urlMessage.id);
