@@ -21,9 +21,13 @@ export class DiscordEmbedBuilder {
       return [this.createSingleEmbed(tweet)];
     }
 
-    // メディアがある場合は各サムネイルに対してEmbedを作成
-    return tweet.media.map((media) => {
-      return this.createSingleEmbed(tweet).setImage(media.thumbnailUrl);
+    // メディアがある場合：最初のEmbedにフルコンテンツ、残りは画像+URLのみ（ギャラリー表示用）
+    return tweet.media.map((media, index) => {
+      if (index === 0) {
+        return this.createSingleEmbed(tweet).setImage(media.thumbnailUrl);
+      }
+      // 2枚目以降は同じURLと画像のみ（Discordが同一URLのEmbedをギャラリーとしてグループ化する）
+      return new EmbedBuilder().setURL(tweet.url).setImage(media.thumbnailUrl);
     });
   }
 
