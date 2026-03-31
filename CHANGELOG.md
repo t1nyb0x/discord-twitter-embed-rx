@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.1.0](https://github.com/t1nyb0x/discord-twitter-embed-rx/compare/v2.0.1...v2.1.0) (2026-03-31)
+
+
+### Features
+
+* axiosで通信していた箇所をfetchに変更 ([77e53b4](https://github.com/t1nyb0x/discord-twitter-embed-rx/commit/77e53b49c6036eb8138a73eb52acc2ab8ed893e9))
+
 ## [2.0.1](https://github.com/t1nyb0x/discord-twitter-embed-rx/compare/v2.0.0...v2.0.1) (2026-03-30)
 
 
