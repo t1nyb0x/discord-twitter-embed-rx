@@ -1,6 +1,6 @@
 {
   "name": "@twitterrx/shared",
-  "version": "0.1.0",
+  "version": "1.0.0",
   "description": "Shared type definitions for TwitterRX Bot and Dashboard",
   "private": true,
   "type": "module",
