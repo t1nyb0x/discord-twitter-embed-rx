@@ -5,6 +5,9 @@
   "minimumReleaseAge": "7 days",
   "postUpdateOptions": ["npmDedupe"],
   "cloneSubmodules": true,
+  "git-submodules": {
+    "enabled": true
+  },
   "packageRules": [
     {
       "matchManagers": ["git-submodules"],
