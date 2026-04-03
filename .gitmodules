@@ -1,3 +1,4 @@
 [submodule "dashboard"]
 	path = dashboard
-	url = git@github.com:t1nyb0x/discord-twitter-embed-rx-dashboard.git        branch = main
+	url = git@github.com:t1nyb0x/discord-twitter-embed-rx-dashboard.git
+	branch = main
