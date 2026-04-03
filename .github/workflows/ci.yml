@@ -29,9 +29,6 @@ jobs:
       - name: Run ESLint
         run: npx eslint .
 
-      - name: Run unit tests
-        run: npm run test:unit
-
       - name: Run all tests with coverage
         run: npm run test:coverage
 

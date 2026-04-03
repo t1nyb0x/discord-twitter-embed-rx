@@ -8,5 +8,11 @@
   "postUpdateOptions": [
     "npmDedupe"
   ],
-  "cloneSubmodules": true
+  "cloneSubmodules": true,
+  "packageRules": [
+    {
+      "matchManagers": ["git-submodules"],
+      "minimumReleaseAge": null
+    }
+  ]
 }
