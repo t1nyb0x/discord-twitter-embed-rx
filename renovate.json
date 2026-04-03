@@ -1,13 +1,9 @@
 {
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
-  "baseBranches": ["develop"],
-  "extends": [
-    "config:recommended"
-  ],
+  "baseBranchPatterns": ["develop"],
+  "extends": ["config:recommended"],
   "minimumReleaseAge": "7 days",
-  "postUpdateOptions": [
-    "npmDedupe"
-  ],
+  "postUpdateOptions": ["npmDedupe"],
   "cloneSubmodules": true,
   "packageRules": [
     {
