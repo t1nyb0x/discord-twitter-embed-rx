@@ -1,0 +1,37 @@
+name: Update dashboard submodule
+
+on:
+  repository_dispatch:
+    types: [dashboard-updated]
+
+jobs:
+  update-submodule:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          submodules: 'recursive'
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Configure git
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: Update dashboard submodule
+        run: git submodule update --remote dashboard
+
+      - name: Create Pull Request
+        uses: peter-evans/create-pull-request@v7
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          branch: chore/update-dashboard-submodule
+          commit-message: "chore(deps): update dashboard submodule"
+          title: "chore(deps): update dashboard submodule"
+          body: |
+            Dashboard リポジトリの更新を検知したため、サブモジュールのポインタを更新します。
+
+            Triggered by: ${{ github.event.client_payload.sha }}
+          base: develop
+          labels: dependencies
