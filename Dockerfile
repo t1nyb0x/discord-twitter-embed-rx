@@ -7,7 +7,8 @@ COPY ["package.json", "package-lock.json", "./"]
 
 # packages/shared をコピーしてビルド
 COPY ["./packages", "./packages"]
-RUN npm ci --workspace=@twitterrx/shared && \
+RUN npm install --package-lock-only && \
+    npm ci --workspace=@twitterrx/shared && \
     npm run build --workspace=@twitterrx/shared
 
 # Bot のソースとビルド設定をコピー
