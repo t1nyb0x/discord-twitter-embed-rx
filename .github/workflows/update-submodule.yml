@@ -22,6 +22,9 @@ jobs:
       - name: Update dashboard submodule
         run: git submodule update --remote dashboard
 
+      - name: Delete existing PR branch
+        run: git push origin --delete chore/update-dashboard-submodule || true
+
       - name: Create Pull Request
         uses: peter-evans/create-pull-request@v8
         with:
