@@ -52,13 +52,16 @@ describe("VideoDownloader", () => {
       });
 
       const mockRequest = new EventEmitter();
-      vi.mocked(httpsModule.get as any).mockImplementation((_url: any, callback: any) => { // eslint-disable-line @typescript-eslint/no-explicit-any
-        callback(mockResponse);
-        return mockRequest;
-      });
+      vi.mocked(httpsModule.get as any).mockImplementation(
+        (_url: any, callback: any) => {
+          // eslint-disable-line @typescript-eslint/no-explicit-any
+          callback(mockResponse);
+          return mockRequest;
+        },
+      );
 
       await expect(
-        downloader.download("https://example.com/video.mp4", "/tmp/test.mp4")
+        downloader.download("https://example.com/video.mp4", "/tmp/test.mp4"),
       ).resolves.toBeUndefined();
 
       expect(createWriteStream).toHaveBeenCalledWith("/tmp/test.mp4");
@@ -76,13 +79,16 @@ describe("VideoDownloader", () => {
       });
 
       const mockRequest = new EventEmitter();
-      vi.mocked(httpModule.get as any).mockImplementation((_url: any, callback: any) => { // eslint-disable-line @typescript-eslint/no-explicit-any
-        callback(mockResponse);
-        return mockRequest;
-      });
+      vi.mocked(httpModule.get as any).mockImplementation(
+        (_url: any, callback: any) => {
+          // eslint-disable-line @typescript-eslint/no-explicit-any
+          callback(mockResponse);
+          return mockRequest;
+        },
+      );
 
       await expect(
-        downloader.download("http://example.com/video.mp4", "/tmp/test.mp4")
+        downloader.download("http://example.com/video.mp4", "/tmp/test.mp4"),
       ).resolves.toBeUndefined();
 
       expect(httpModule.get).toHaveBeenCalled();
@@ -93,13 +99,16 @@ describe("VideoDownloader", () => {
       const mockResponse = createMockResponse(404);
       const mockRequest = new EventEmitter();
 
-      vi.mocked(httpsModule.get as any).mockImplementation((_url: any, callback: any) => { // eslint-disable-line @typescript-eslint/no-explicit-any
-        callback(mockResponse);
-        return mockRequest;
-      });
+      vi.mocked(httpsModule.get as any).mockImplementation(
+        (_url: any, callback: any) => {
+          // eslint-disable-line @typescript-eslint/no-explicit-any
+          callback(mockResponse);
+          return mockRequest;
+        },
+      );
 
       await expect(
-        downloader.download("https://example.com/video.mp4", "/tmp/test.mp4")
+        downloader.download("https://example.com/video.mp4", "/tmp/test.mp4"),
       ).rejects.toThrow("Failed to download file: 404");
 
       expect(mockResponse.resume).toHaveBeenCalled();
@@ -109,7 +118,10 @@ describe("VideoDownloader", () => {
       const mockRequest = new EventEmitter();
       vi.mocked(httpsModule.get as any).mockImplementation(() => mockRequest); // eslint-disable-line @typescript-eslint/no-explicit-any
 
-      const downloadPromise = downloader.download("https://example.com/video.mp4", "/tmp/test.mp4");
+      const downloadPromise = downloader.download(
+        "https://example.com/video.mp4",
+        "/tmp/test.mp4",
+      );
       mockRequest.emit("error", new Error("connection refused"));
 
       await expect(downloadPromise).rejects.toThrow("connection refused");
@@ -121,17 +133,22 @@ describe("VideoDownloader", () => {
 
       const mockResponse = createMockResponse(200);
       mockResponse.pipe.mockImplementation(() => {
-        process.nextTick(() => mockWriteStream.emit("error", new Error("disk full")));
+        process.nextTick(() =>
+          mockWriteStream.emit("error", new Error("disk full")),
+        );
       });
 
       const mockRequest = new EventEmitter();
-      vi.mocked(httpsModule.get as any).mockImplementation((_url: any, callback: any) => { // eslint-disable-line @typescript-eslint/no-explicit-any
-        callback(mockResponse);
-        return mockRequest;
-      });
+      vi.mocked(httpsModule.get as any).mockImplementation(
+        (_url: any, callback: any) => {
+          // eslint-disable-line @typescript-eslint/no-explicit-any
+          callback(mockResponse);
+          return mockRequest;
+        },
+      );
 
       await expect(
-        downloader.download("https://example.com/video.mp4", "/tmp/test.mp4")
+        downloader.download("https://example.com/video.mp4", "/tmp/test.mp4"),
       ).rejects.toThrow("disk full");
 
       expect((mockWriteStream as any).close).toHaveBeenCalled(); // eslint-disable-line @typescript-eslint/no-explicit-any

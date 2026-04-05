@@ -1,7 +1,13 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import type { FxTwitterApi } from "@/fxtwitter/api";
-import type { FXTwitter, Tweet as FxTweet, Author, Media, Photo } from "@/fxtwitter/fxtwitter";
+import type {
+  FXTwitter,
+  Tweet as FxTweet,
+  Author,
+  Media,
+  Photo,
+} from "@/fxtwitter/fxtwitter";
 import { FxTwitterAdapter } from "@/adapters/twitter/FxTwitterAdapter";
 
 vi.mock("@/utils/logger", () => ({
@@ -70,9 +76,13 @@ describe("FxTwitterAdapter", () => {
 
   describe("fetchTweet", () => {
     it("正常なレスポンスからTweetモデルを生成できる", async () => {
-      mockApi.getPostInformation.mockResolvedValue(createFxResponse(createFxTweet()));
+      mockApi.getPostInformation.mockResolvedValue(
+        createFxResponse(createFxTweet()),
+      );
 
-      const result = await adapter.fetchTweet("https://x.com/test_user/status/123456789");
+      const result = await adapter.fetchTweet(
+        "https://x.com/test_user/status/123456789",
+      );
 
       expect(result).toBeDefined();
       expect(result?.url).toBe("https://x.com/test_user/status/123456789");
@@ -84,19 +94,27 @@ describe("FxTwitterAdapter", () => {
     });
 
     it("URL を fxtwitter 形式に変換してリクエストする", async () => {
-      mockApi.getPostInformation.mockResolvedValue(createFxResponse(createFxTweet()));
+      mockApi.getPostInformation.mockResolvedValue(
+        createFxResponse(createFxTweet()),
+      );
 
       await adapter.fetchTweet("https://x.com/user/status/123");
 
-      expect(mockApi.getPostInformation).toHaveBeenCalledWith("https://api.fxtwitter.com/user/status/123");
+      expect(mockApi.getPostInformation).toHaveBeenCalledWith(
+        "https://api.fxtwitter.com/user/status/123",
+      );
     });
 
     it("twitter.com の URL も変換できる", async () => {
-      mockApi.getPostInformation.mockResolvedValue(createFxResponse(createFxTweet()));
+      mockApi.getPostInformation.mockResolvedValue(
+        createFxResponse(createFxTweet()),
+      );
 
       await adapter.fetchTweet("https://twitter.com/user/status/123");
 
-      expect(mockApi.getPostInformation).toHaveBeenCalledWith("https://api.fxtwitter.com/user/status/123");
+      expect(mockApi.getPostInformation).toHaveBeenCalledWith(
+        "https://api.fxtwitter.com/user/status/123",
+      );
     });
 
     it("画像メディアを含むツイートを変換できる", async () => {
@@ -110,7 +128,9 @@ describe("FxTwitterAdapter", () => {
       expect(result?.media).toHaveLength(1);
       expect(result?.media[0].type).toBe("photo");
       expect(result?.media[0].url).toBe("https://example.com/photo.jpg");
-      expect(result?.media[0].thumbnailUrl).toBe("https://example.com/photo_thumb.jpg");
+      expect(result?.media[0].thumbnailUrl).toBe(
+        "https://example.com/photo_thumb.jpg",
+      );
     });
 
     it("複数の画像メディアを変換できる", async () => {
@@ -128,7 +148,9 @@ describe("FxTwitterAdapter", () => {
     });
 
     it("メディアがない場合 media は空配列になる", async () => {
-      mockApi.getPostInformation.mockResolvedValue(createFxResponse(createFxTweet({ media: undefined })));
+      mockApi.getPostInformation.mockResolvedValue(
+        createFxResponse(createFxTweet({ media: undefined })),
+      );
 
       const result = await adapter.fetchTweet("https://x.com/user/status/123");
 
@@ -138,7 +160,10 @@ describe("FxTwitterAdapter", () => {
     it("引用ツイートが含まれる場合 quote が設定される", async () => {
       const quotedTweet = createFxTweet({
         url: "https://x.com/quoted_user/status/999",
-        author: createFxAuthor({ screen_name: "quoted_user", name: "Quoted User" }),
+        author: createFxAuthor({
+          screen_name: "quoted_user",
+          name: "Quoted User",
+        }),
         text: "Original tweet",
       });
       const tweet = createFxTweet({ quote: quotedTweet, text: "Check this!" });
@@ -153,7 +178,10 @@ describe("FxTwitterAdapter", () => {
 
     it("quote が入れ子 2階層目は変換しない（depth 制限）", async () => {
       const deepQuote = createFxTweet({ text: "deep nested" });
-      const quotedTweet = createFxTweet({ quote: deepQuote, text: "level 1 quote" });
+      const quotedTweet = createFxTweet({
+        quote: deepQuote,
+        text: "level 1 quote",
+      });
       const tweet = createFxTweet({ quote: quotedTweet });
       mockApi.getPostInformation.mockResolvedValue(createFxResponse(tweet));
 
@@ -172,7 +200,11 @@ describe("FxTwitterAdapter", () => {
     });
 
     it("レスポンスに tweet が含まれない場合 undefined を返す", async () => {
-      mockApi.getPostInformation.mockResolvedValue({ code: 404, message: "Not Found", tweet: null });
+      mockApi.getPostInformation.mockResolvedValue({
+        code: 404,
+        message: "Not Found",
+        tweet: null,
+      });
 
       const result = await adapter.fetchTweet("https://x.com/user/status/123");
 
