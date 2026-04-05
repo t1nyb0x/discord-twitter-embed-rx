@@ -33,7 +33,11 @@ describe("RedisReplyLogger", () => {
 
       await logger.logReply("msg-1", info);
 
-      expect(redis.set).toHaveBeenCalledWith("replymap:msg-1", JSON.stringify(info), { EX: TTL });
+      expect(redis.set).toHaveBeenCalledWith(
+        "replymap:msg-1",
+        JSON.stringify(info),
+        { EX: TTL },
+      );
     });
 
     it("カスタム TTL を使用する", async () => {
@@ -42,21 +46,31 @@ describe("RedisReplyLogger", () => {
 
       await customLogger.logReply("msg-1", info);
 
-      expect(redis.set).toHaveBeenCalledWith("replymap:msg-1", JSON.stringify(info), { EX: 3600 });
+      expect(redis.set).toHaveBeenCalledWith(
+        "replymap:msg-1",
+        JSON.stringify(info),
+        { EX: 3600 },
+      );
     });
   });
 
   describe("addReply", () => {
     it("既存エントリがある場合 replyIds に追加する", async () => {
-      const existing: ReplyInfo = { replyIds: ["reply-1"], channelId: "channel-1" };
+      const existing: ReplyInfo = {
+        replyIds: ["reply-1"],
+        channelId: "channel-1",
+      };
       vi.mocked(redis.get).mockResolvedValue(JSON.stringify(existing));
 
       await logger.addReply("msg-1", "reply-2");
 
       expect(redis.set).toHaveBeenCalledWith(
         "replymap:msg-1",
-        JSON.stringify({ replyIds: ["reply-1", "reply-2"], channelId: "channel-1" }),
-        { EX: TTL }
+        JSON.stringify({
+          replyIds: ["reply-1", "reply-2"],
+          channelId: "channel-1",
+        }),
+        { EX: TTL },
       );
     });
 

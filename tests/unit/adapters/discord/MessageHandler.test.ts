@@ -2,7 +2,10 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { ChannelType } from "discord.js";
 
 import type { ITwitterAdapter } from "@/adapters/twitter/BaseTwitterAdapter";
-import type { IFileManager, IVideoDownloader } from "@/adapters/discord/MessageHandler";
+import type {
+  IFileManager,
+  IVideoDownloader,
+} from "@/adapters/discord/MessageHandler";
 import { MessageHandler } from "@/adapters/discord/MessageHandler";
 import type { IReplyLogger } from "@/db/replyLogger";
 import type { ChannelConfigService } from "@/core/services/ChannelConfigService";
@@ -50,7 +53,9 @@ describe("MessageHandler", () => {
 
   beforeEach(() => {
     processor = {
-      extractUrls: vi.fn().mockReturnValue(["https://x.com/user/status/123456789"]),
+      extractUrls: vi
+        .fn()
+        .mockReturnValue(["https://x.com/user/status/123456789"]),
       categorizeBySpoiler: vi.fn().mockReturnValue({
         normal: ["https://x.com/user/status/123456789"],
         spoiler: [],
@@ -66,7 +71,9 @@ describe("MessageHandler", () => {
     } as unknown as DiscordEmbedBuilder;
 
     mediaHandler = {
-      filterBySize: vi.fn().mockResolvedValue({ downloadable: [], tooLarge: [] }),
+      filterBySize: vi
+        .fn()
+        .mockResolvedValue({ downloadable: [], tooLarge: [] }),
     } as unknown as MediaHandler;
 
     fileManager = {
@@ -95,14 +102,16 @@ describe("MessageHandler", () => {
       fileManager,
       videoDownloader,
       replyLogger,
-      "/tmp"
+      "/tmp",
     );
   });
 
   describe("handleMessage - 無視すべきメッセージ", () => {
     it("ボットのメッセージは無視する", async () => {
       const client = createMockClient();
-      const message = createMockMessage({ author: { bot: true, id: "other-bot" } });
+      const message = createMockMessage({
+        author: { bot: true, id: "other-bot" },
+      });
 
       await handler.handleMessage(client, message);
 
@@ -111,7 +120,9 @@ describe("MessageHandler", () => {
 
     it("自分自身（Bot）のメッセージは無視する", async () => {
       const client = createMockClient();
-      const message = createMockMessage({ author: { bot: false, id: "bot-user-id" } });
+      const message = createMockMessage({
+        author: { bot: false, id: "bot-user-id" },
+      });
 
       await handler.handleMessage(client, message);
 
@@ -145,7 +156,7 @@ describe("MessageHandler", () => {
         videoDownloader,
         replyLogger,
         "/tmp",
-        channelConfigService
+        channelConfigService,
       );
 
       const client = createMockClient();
@@ -153,7 +164,10 @@ describe("MessageHandler", () => {
 
       await handlerWithConfig.handleMessage(client, message);
 
-      expect(channelConfigService.isChannelAllowed).toHaveBeenCalledWith("guild-id", "channel-id");
+      expect(channelConfigService.isChannelAllowed).toHaveBeenCalledWith(
+        "guild-id",
+        "channel-id",
+      );
       expect(twitterAdapter.fetchTweet).not.toHaveBeenCalled();
     });
 
@@ -172,7 +186,7 @@ describe("MessageHandler", () => {
         videoDownloader,
         replyLogger,
         "/tmp",
-        channelConfigService
+        channelConfigService,
       );
 
       const client = createMockClient();
@@ -180,7 +194,9 @@ describe("MessageHandler", () => {
 
       await handlerWithConfig.handleMessage(client, message);
 
-      expect(twitterAdapter.fetchTweet).toHaveBeenCalledWith("https://x.com/user/status/123456789");
+      expect(twitterAdapter.fetchTweet).toHaveBeenCalledWith(
+        "https://x.com/user/status/123456789",
+      );
     });
 
     it("guildId がない場合（DM等）はチャンネル設定チェックをスキップして処理する", async () => {
@@ -198,7 +214,7 @@ describe("MessageHandler", () => {
         videoDownloader,
         replyLogger,
         "/tmp",
-        channelConfigService
+        channelConfigService,
       );
 
       const client = createMockClient();
@@ -218,13 +234,15 @@ describe("MessageHandler", () => {
 
       await handler.handleMessage(client, message);
 
-      expect(twitterAdapter.fetchTweet).toHaveBeenCalledWith("https://x.com/user/status/123456789");
+      expect(twitterAdapter.fetchTweet).toHaveBeenCalledWith(
+        "https://x.com/user/status/123456789",
+      );
       expect(message.reply).toHaveBeenCalledWith(
-        expect.objectContaining({ allowedMentions: { repliedUser: false } })
+        expect.objectContaining({ allowedMentions: { repliedUser: false } }),
       );
       expect(replyLogger.logReply).toHaveBeenCalledWith(
         "msg-id",
-        expect.objectContaining({ channelId: "channel-id" })
+        expect.objectContaining({ channelId: "channel-id" }),
       );
     });
 
@@ -236,7 +254,7 @@ describe("MessageHandler", () => {
       await handler.handleMessage(client, message);
 
       expect(message.reply).toHaveBeenCalledWith(
-        expect.objectContaining({ content: "ツイートの取得に失敗しました。" })
+        expect.objectContaining({ content: "ツイートの取得に失敗しました。" }),
       );
     });
   });
