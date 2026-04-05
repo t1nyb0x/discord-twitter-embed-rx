@@ -11,7 +11,7 @@ jobs:
     steps:
       - uses: actions/checkout@v6
         with:
-          submodules: 'recursive'
+          submodules: "recursive"
 
       - name: Setup Node.js
         uses: actions/setup-node@v6
@@ -44,7 +44,7 @@ jobs:
     steps:
       - uses: actions/checkout@v6
         with:
-          submodules: 'recursive'
+          submodules: "recursive"
 
       - name: Setup Node.js ${{ matrix.node-version }}
         uses: actions/setup-node@v6
@@ -60,8 +60,11 @@ jobs:
             packages/*/node_modules
           key: deps-${{ github.run_id }}
 
-      - name: Run ESLint
-        run: npx eslint .
+      - name: Run oxlint
+        run: npx oxlint src/
+
+      - name: Run oxfmt (format check)
+        run: npx oxfmt --check src/
 
       - name: Run all tests with coverage
         run: npm run test:coverage
@@ -79,7 +82,7 @@ jobs:
     steps:
       - uses: actions/checkout@v6
         with:
-          submodules: 'recursive'
+          submodules: "recursive"
 
       - name: Setup Node.js
         uses: actions/setup-node@v6
@@ -113,7 +116,7 @@ jobs:
     steps:
       - uses: actions/checkout@v6
         with:
-          submodules: 'recursive'
+          submodules: "recursive"
 
       - name: Setup Node.js
         uses: actions/setup-node@v6
@@ -139,7 +142,7 @@ jobs:
     steps:
       - uses: actions/checkout@v6
         with:
-          submodules: 'recursive'
+          submodules: "recursive"
 
       - name: Setup Node.js
         uses: actions/setup-node@v6

@@ -1,9 +1,8 @@
 import fs from "node:fs";
 import path from "node:path";
+
 import { Client, GatewayIntentBits, Message, Partials, ChannelType } from "discord.js";
-import config, { ROOT_DIR } from "./config/config";
-import { connectRedis } from "./db/connect";
-import { deleteReply, popReply } from "./db/replyLogger";
+
 import { DiscordEmbedBuilder } from "@/adapters/discord/EmbedBuilder";
 import { MessageHandler } from "@/adapters/discord/MessageHandler";
 import { TwitterAdapter } from "@/adapters/twitter/TwitterAdapter";
@@ -17,6 +16,10 @@ import { HttpClient } from "@/infrastructure/http/HttpClient";
 import { VideoDownloader } from "@/infrastructure/http/VideoDownloader";
 import { cleanupOrphanedConfigs } from "@/utils/cleanupOrphanedConfigs";
 import logger from "@/utils/logger";
+
+import config, { ROOT_DIR } from "./config/config";
+import { connectRedis } from "./db/connect";
+import { deleteReply, popReply } from "./db/replyLogger";
 
 enum ApplicationMode {
   Production = "production",

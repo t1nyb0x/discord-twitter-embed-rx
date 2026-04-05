@@ -1,5 +1,6 @@
-import { FXTwitter } from "./fxtwitter";
 import logger from "@/utils/logger";
+
+import { FXTwitter } from "./fxtwitter";
 
 export class FxTwitterApi {
   async getPostInformation(url: string): Promise<FXTwitter | undefined> {

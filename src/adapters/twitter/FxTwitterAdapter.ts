@@ -1,8 +1,9 @@
-import { BaseTwitterAdapter, ITwitterAdapter } from "./BaseTwitterAdapter";
 import { Tweet, TweetMedia } from "@/core/models/Tweet";
 import { FxTwitterApi } from "@/fxtwitter/api";
 import { Tweet as FxTweet } from "@/fxtwitter/fxtwitter";
 import logger from "@/utils/logger";
+
+import { BaseTwitterAdapter, ITwitterAdapter } from "./BaseTwitterAdapter";
 
 /**
  * FxTwitter API アダプター

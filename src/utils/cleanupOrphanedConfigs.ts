@@ -6,6 +6,7 @@
  */
 
 import type { Client } from "discord.js";
+
 import type { AppRedisClient } from "@/db/init";
 import logger from "@/utils/logger";
 

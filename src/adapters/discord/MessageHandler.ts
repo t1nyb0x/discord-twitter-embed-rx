@@ -1,5 +1,6 @@
 import { randomUUID } from "node:crypto";
 import path from "node:path";
+
 import {
   ActionRowBuilder,
   AttachmentBuilder,
@@ -11,7 +12,7 @@ import {
   Message,
   EmbedBuilder,
 } from "discord.js";
-import { DiscordEmbedBuilder } from "./EmbedBuilder";
+
 import { ITwitterAdapter } from "@/adapters/twitter/BaseTwitterAdapter";
 import { Tweet } from "@/core/models/Tweet";
 import { ChannelConfigService } from "@/core/services/ChannelConfigService";
@@ -19,6 +20,8 @@ import { MediaHandler } from "@/core/services/MediaHandler";
 import { TweetProcessor } from "@/core/services/TweetProcessor";
 import { IReplyLogger } from "@/db/replyLogger";
 import logger from "@/utils/logger";
+
+import { DiscordEmbedBuilder } from "./EmbedBuilder";
 
 export interface IFileManager {
   createTempDirectory(): Promise<string>;

@@ -1,5 +1,6 @@
-import { redis } from "./init";
 import logger from "@/utils/logger";
+
+import { redis } from "./init";
 
 export async function connectRedis() {
   try {
