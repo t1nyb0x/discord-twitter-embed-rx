@@ -1,21 +1,4 @@
-<!--
-  同期影響レポート
-  ─────────────────────────────────────────────
-  バージョン変更: なし（新規作成）→ 1.0.0
-  追加されたセクション:
-    - コア原則（I〜V）
-    - 技術スタック
-    - コード品質ゲート
-    - ガバナンス
-  削除されたセクション: なし（初版）
-  更新が必要なテンプレート:
-    ✅ .specify/templates/plan-template.md（コンスティテューションチェック更新）
-    ✅ .specify/templates/spec-template.md（制約セクション整合）
-    ✅ .specify/templates/tasks-template.md（SRP/クリーンコードタスクタイプ追記）
-  フォローアップTODO: なし
--->
-
-# melody-step コンスティテューション
+# discord-twitter-embed-rx コンスティテューション
 
 ## コア原則
 
@@ -29,9 +12,9 @@
 - 魔法の数値・文字列はすべて定数または Enum として抽出すること。
 - コードの重複は即座に抽象化し、同じロジックを2箇所以上に書かないこと（DRY）。
 
-**根拠**: TypeScript + Deno
-というランタイム境界が存在する構成では、コードの可読性が
-バグ混入リスクと直結する。クリーンコードは長期的な開発速度の根幹である。
+**根拠**: レイヤードアーキテクチャ（Core / Adapter / Infrastructure）を持つこの構成では、
+各層の境界を越えるコードの可読性がバグ混入リスクと直結する。
+クリーンコードは長期的な開発速度の根幹である。
 
 ---
 
@@ -45,19 +28,19 @@
 
 ```typescript
 // NG
-function play(note: Note | null) {
-  if (note !== null) {
-    if (note.isValid()) {
-      synth.play(note);
+function handleMessage(message: Message | null) {
+  if (message !== null) {
+    if (containsTwitterUrl(message)) {
+      processMessage(message);
     }
   }
 }
 
 // OK
-function play(note: Note | null): void {
-  if (note === null) return;
-  if (!note.isValid()) return;
-  synth.play(note);
+function handleMessage(message: Message | null): void {
+  if (message === null) return;
+  if (!containsTwitterUrl(message)) return;
+  processMessage(message);
 }
 ```
 
@@ -71,15 +54,14 @@ function play(note: Note | null): void {
 すべてのモジュールはテストコードが書きやすい設計でなければならない（MUST）。
 
 - 依存関係は引数注入（DI）で渡し、モジュール内部でのハードコードを禁止する。
-- Tone.js など副作用を持つライブラリへの直接呼び出しは、薄いアダプター層
-  （`AudioAdapter`・`SynthAdapter` など）を介してのみ行う。
+- Discord.js・外部 Twitter API など副作用を持つライブラリへの直接呼び出しは、
+  薄いアダプター層（`ITwitterAdapter`・`EmbedBuilder` など）を介してのみ行う。
 - テスト対象の関数は純粋関数を優先し、グローバル状態への依存を最小化すること。
-- Deno の `Deno.test` + `@std/testing`
-  を用いたユニットテストを各ドメインモジュールに対して作成すること。
+- Vitest を用いたユニットテストを各ドメインモジュールに対して作成すること。
 
 **根拠**:
-音響処理は実装が複雑になりやすい。テスト可能な設計は早期にリグレッションを
-検出し、リファクタリングを安全に行う土台を提供する。
+Discord イベントハンドリングと外部 API 呼び出しは実装が複雑になりやすい。
+テスト可能な設計は早期にリグレッションを検出し、リファクタリングを安全に行う土台を提供する。
 
 ---
 
@@ -102,37 +84,44 @@ function play(note: Note | null): void {
 クラス・関数・モジュールはそれぞれ **1つの責務のみ**
 を持たなければならない（MUST）。
 
-- UIコンポーネントは描画のみを責務とし、ゲームロジックを含めない。
-- ゲームロジック（音程判定・スコア計算）は UI から完全に分離すること。
-- Tone.js との統合はオーディオ関連モジュールに閉じること。
-- ファイル名はその責務を端的に表すこと（例: `NoteEvaluator.ts`,
-  `AudioAdapter.ts`）。
+- Discord のイベントハンドリングはアダプター層（`adapters/discord/`）に閉じること。
+- Twitter API との通信はインフラ層（`adapters/twitter/`）に閉じること。
+- Core 層（`core/`）は外部ライブラリに依存してはならない（MUST NOT）。
+- ファイル名はその責務を端的に表すこと（例: `TweetProcessor.ts`, `EmbedBuilder.ts`）。
 
 **根拠**: SRP への違反は変更影響範囲を拡大し、テスト設計を困難にする。
-ブラウザゲームでは UI・オーディオ・ゲームロジックが密結合しやすいため、
-境界を明確にコンスティテューションで定義する。
+Discord Bot では Discord イベント処理・Twitter API 通信・ビジネスロジックが
+密結合しやすいため、境界を明確にコンスティテューションで定義する。
 
 ---
 
 ## 技術スタック
 
-| 役割                | 技術                                           |
-| ------------------- | ---------------------------------------------- |
-| 言語                | TypeScript                                     |
-| ランタイム          | Deno                                           |
-| バンドラー / ビルド | Vite（Deno + Vite プラグイン構成）             |
-| オーディオエンジン  | Tone.js                                        |
-| テスト              | Deno.test / @std/testing                       |
-| ターゲット          | ブラウザ（モダンブラウザ、Web Audio API 必須） |
+| 役割                 | 技術                                        |
+| -------------------- | ------------------------------------------- |
+| 言語                 | TypeScript（strict モード必須）             |
+| ランタイム           | Node.js                                     |
+| ビルド               | tsc + tsc-alias                             |
+| 実行（開発）         | tsx                                         |
+| テスト               | Vitest（unit / integration / e2e）          |
+| リント               | oxlint                                      |
+| フォーマット         | oxfmt                                       |
+| Discord クライアント | discord.js v14                              |
+| 外部 Twitter API     | vxTwitter / fxTwitter（フォールバック構成） |
+| ストレージ           | Redis（返信ログ・重複排除）                 |
+| ロギング             | Winston + winston-daily-rotate-file         |
+| コンテナ             | Docker + Docker Compose                     |
+| パッケージ管理       | npm workspaces（bot / dashboard / shared）  |
+| ダッシュボード       | Astro.js（Git サブモジュール）              |
 
 **制約**:
 
-- Node.js API を直接利用してはならない（MUST NOT）。Deno 互換の API
-  のみ使用すること。
-- Tone.js の
-  Context（AudioContext）はアプリケーション起動時に1度だけ初期化すること。
 - `any` 型の使用を禁止する（MUST NOT）。型推論が困難な場合は `unknown` +
   型ガードを使うこと。
+- Core 層から Node.js 固有の API（`fs`・`net` 等）を直接呼び出してはならない（MUST NOT）。
+  Infrastructure 層のモジュールを介すること。
+- Redis クライアントはアプリケーション起動時に1度だけ初期化すること。
+- 外部 API（vxTwitter / fxTwitter）へのリクエストは必ず `HttpClient` を介すること。
 
 ---
 
@@ -140,13 +129,13 @@ function play(note: Note | null): void {
 
 すべての PR はマージ前に以下のゲートをパスしなければならない（MUST）:
 
-1. **Linting**: `deno lint` がエラーなしで通過すること。
-2. **フォーマット**: `deno fmt --check` がエラーなしで通過すること。
-3. **型チェック**: `deno check` がエラーなしで通過すること。
-4. **ユニットテスト**: `deno test` で全テストがグリーンであること。
-5. **メソッドサイズ**:
-   60行を超える関数が存在しないこと（レビュアーが目視確認）。
-6. **SRP チェック**: UI・ゲームロジック・オーディオの責務が混在していないこと。
+1. **Linting**: `oxlint src/` がエラーなしで通過すること。
+2. **フォーマット**: `oxfmt --check src/` がエラーなしで通過すること。
+3. **型チェック**: `tsc --noEmit` がエラーなしで通過すること。
+4. **ユニットテスト**: `vitest run` で全テストがグリーンであること。
+5. **カバレッジ**: Codecov へレポートが送信されること（CI で自動実行）。
+6. **メソッドサイズ**: 60行を超える関数が存在しないこと（レビュアーが目視確認）。
+7. **SRP チェック**: Core / Adapter / Infrastructure の責務が混在していないこと。
 
 ---
 
@@ -166,4 +155,4 @@ function play(note: Note | null): void {
 
 ---
 
-**バージョン**: 1.0.0 | **批准日**: 2026-03-14 | **最終修正日**: 2026-03-14
+**バージョン**: 1.0.0 | **批准日**: 2026-04-05 | **最終修正日**: 2026-04-05
