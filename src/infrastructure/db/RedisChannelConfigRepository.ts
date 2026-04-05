@@ -1,4 +1,5 @@
 import type { ConfigResult, GuildConfig, IChannelConfigRepository } from "@twitterrx/shared";
+
 import { redis } from "@/db/init";
 import logger from "@/utils/logger";
 

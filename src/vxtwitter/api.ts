@@ -1,5 +1,6 @@
-import { VxTwitter } from "./vxtwitter";
 import logger from "@/utils/logger";
+
+import { VxTwitter } from "./vxtwitter";
 
 export class VxTwitterServerError extends Error {
   constructor(

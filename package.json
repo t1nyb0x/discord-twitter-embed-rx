@@ -25,16 +25,8 @@
     "test:ui": "vitest --ui",
     "test:coverage": "vitest run --coverage",
     "test:dashboard": "npm run test --workspace=@twitterrx/dashboard",
-    "lint": "eslint src/index.ts"
-  },
-  "lint-staged": {
-    "*.@ts": [
-      "tsc --noEmit",
-      "eslint --ext .ts ./src --fix"
-    ],
-    "src/**": [
-      "prettier --write"
-    ]
+    "lint": "oxlint src/",
+    "format": "oxfmt src/"
   },
   "husky": {
     "hooks": {
@@ -56,19 +48,14 @@
   },
   "homepage": "https://github.com/t1nyb0x/discord-twitter-embed-rx#readme",
   "devDependencies": {
-    "@eslint/compat": "^2.0.0",
     "@types/js-yaml": "^4.0.9",
     "@types/node": "^24.10.1",
-    "@typescript-eslint/eslint-plugin": "^8.11.0",
-    "@typescript-eslint/parser": "^8.11.0",
     "@vitest/coverage-v8": "^4.0.13",
     "@vitest/ui": "^4.0.13",
-    "eslint": "^9.13.0",
-    "eslint-config-prettier": "^10.0.0",
-    "eslint-plugin-import": "^2.31.0",
     "husky": "^9.1.6",
     "lint-staged": "^16.0.0",
-    "prettier": "^3.3.3",
+    "oxfmt": "^0.43.0",
+    "oxlint": "^1.58.0",
     "ts-node": "^10.9.2",
     "tsc-alias": "^1.8.16",
     "tsx": "^4.19.3",
