@@ -1,4 +1,12 @@
-import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
+import {
+  afterAll,
+  beforeAll,
+  beforeEach,
+  describe,
+  expect,
+  it,
+  vi,
+} from "vitest";
 
 import type { IChannelConfigRepository, GuildConfig } from "@twitterrx/shared";
 
@@ -13,7 +21,9 @@ const createMockRepo = (): IChannelConfigRepository => ({
   isChannelAllowed: vi.fn(),
 });
 
-const createGuildConfig = (overrides: Partial<GuildConfig> = {}): GuildConfig => ({
+const createGuildConfig = (
+  overrides: Partial<GuildConfig> = {},
+): GuildConfig => ({
   guildId: "guild-1",
   allowAllChannels: false,
   whitelistedChannelIds: [],
@@ -34,7 +44,8 @@ describe("ChannelConfigService (デフォルト環境)", () => {
     delete process.env.REDIS_DOWN_FALLBACK;
     delete process.env.CONFIG_NOT_FOUND_FALLBACK;
     vi.resetModules();
-    ({ ChannelConfigService } = await import("@/core/services/ChannelConfigService"));
+    ({ ChannelConfigService } =
+      await import("@/core/services/ChannelConfigService"));
   });
 
   beforeEach(() => {
@@ -48,13 +59,17 @@ describe("ChannelConfigService (デフォルト環境)", () => {
         data: createGuildConfig({ allowAllChannels: true }),
       });
       const service = new ChannelConfigService(mockRepo);
-      expect(await service.isChannelAllowed("guild-1", "any-channel")).toBe(true);
+      expect(await service.isChannelAllowed("guild-1", "any-channel")).toBe(
+        true,
+      );
     });
 
     it("ホワイトリストにチャンネルが含まれる場合 true を返す", async () => {
       vi.mocked(mockRepo.getConfig).mockResolvedValue({
         kind: "found",
-        data: createGuildConfig({ whitelistedChannelIds: ["channel-1", "channel-2"] }),
+        data: createGuildConfig({
+          whitelistedChannelIds: ["channel-1", "channel-2"],
+        }),
       });
       const service = new ChannelConfigService(mockRepo);
       expect(await service.isChannelAllowed("guild-1", "channel-1")).toBe(true);
@@ -66,7 +81,9 @@ describe("ChannelConfigService (デフォルト環境)", () => {
         data: createGuildConfig({ whitelistedChannelIds: ["channel-1"] }),
       });
       const service = new ChannelConfigService(mockRepo);
-      expect(await service.isChannelAllowed("guild-1", "channel-999")).toBe(false);
+      expect(await service.isChannelAllowed("guild-1", "channel-999")).toBe(
+        false,
+      );
     });
   });
 
@@ -74,19 +91,26 @@ describe("ChannelConfigService (デフォルト環境)", () => {
     it("設定が見つからない場合 false を返す", async () => {
       vi.mocked(mockRepo.getConfig).mockResolvedValue({ kind: "not_found" });
       const service = new ChannelConfigService(mockRepo);
-      expect(await service.isChannelAllowed("guild-1", "channel-1")).toBe(false);
+      expect(await service.isChannelAllowed("guild-1", "channel-1")).toBe(
+        false,
+      );
     });
   });
 
   describe("isChannelAllowed - kind: error (デフォルト REDIS_DOWN_FALLBACK=allow)", () => {
     it("Redis障害時 true を返す", async () => {
-      vi.mocked(mockRepo.getConfig).mockResolvedValue({ kind: "error", error: new Error("redis down") });
+      vi.mocked(mockRepo.getConfig).mockResolvedValue({
+        kind: "error",
+        error: new Error("redis down"),
+      });
       const service = new ChannelConfigService(mockRepo);
       expect(await service.isChannelAllowed("guild-1", "channel-1")).toBe(true);
     });
 
     it("getConfig が例外を投げた場合 true を返す", async () => {
-      vi.mocked(mockRepo.getConfig).mockRejectedValue(new Error("unexpected failure"));
+      vi.mocked(mockRepo.getConfig).mockRejectedValue(
+        new Error("unexpected failure"),
+      );
       const service = new ChannelConfigService(mockRepo);
       expect(await service.isChannelAllowed("guild-1", "channel-1")).toBe(true);
     });
@@ -129,7 +153,8 @@ describe("ChannelConfigService (CONFIG_NOT_FOUND_FALLBACK=allow)", () => {
   beforeAll(async () => {
     vi.stubEnv("CONFIG_NOT_FOUND_FALLBACK", "allow");
     vi.resetModules();
-    ({ ChannelConfigService } = await import("@/core/services/ChannelConfigService"));
+    ({ ChannelConfigService } =
+      await import("@/core/services/ChannelConfigService"));
   });
 
   afterAll(() => {
@@ -158,7 +183,8 @@ describe("ChannelConfigService (REDIS_DOWN_FALLBACK=deny)", () => {
   beforeAll(async () => {
     vi.stubEnv("REDIS_DOWN_FALLBACK", "deny");
     vi.resetModules();
-    ({ ChannelConfigService } = await import("@/core/services/ChannelConfigService"));
+    ({ ChannelConfigService } =
+      await import("@/core/services/ChannelConfigService"));
   });
 
   afterAll(() => {
@@ -170,13 +196,18 @@ describe("ChannelConfigService (REDIS_DOWN_FALLBACK=deny)", () => {
   });
 
   it("Redis障害時 false を返す", async () => {
-    vi.mocked(mockRepo.getConfig).mockResolvedValue({ kind: "error", error: new Error("redis down") });
+    vi.mocked(mockRepo.getConfig).mockResolvedValue({
+      kind: "error",
+      error: new Error("redis down"),
+    });
     const service = new ChannelConfigService(mockRepo);
     expect(await service.isChannelAllowed("guild-1", "channel-1")).toBe(false);
   });
 
   it("getConfig が例外を投げた場合 false を返す", async () => {
-    vi.mocked(mockRepo.getConfig).mockRejectedValue(new Error("unexpected failure"));
+    vi.mocked(mockRepo.getConfig).mockRejectedValue(
+      new Error("unexpected failure"),
+    );
     const service = new ChannelConfigService(mockRepo);
     expect(await service.isChannelAllowed("guild-1", "channel-1")).toBe(false);
   });

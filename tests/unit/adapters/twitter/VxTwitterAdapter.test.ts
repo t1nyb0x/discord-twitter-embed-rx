@@ -9,7 +9,9 @@ vi.mock("@/utils/logger", () => ({
   default: { info: vi.fn(), warn: vi.fn(), error: vi.fn(), debug: vi.fn() },
 }));
 
-const createVxTwitterData = (overrides: Partial<VxTwitter> = {}): VxTwitter => ({
+const createVxTwitterData = (
+  overrides: Partial<VxTwitter> = {},
+): VxTwitter => ({
   communityNote: null,
   conversationID: "123456789",
   date: "Sun Jan 01 00:00:00 +0000 2024",
@@ -46,7 +48,9 @@ describe("VxTwitterAdapter", () => {
       const vxData = createVxTwitterData();
       mockApi.getPostInformation.mockResolvedValue(vxData);
 
-      const result = await adapter.fetchTweet("https://x.com/test_user/status/123456789");
+      const result = await adapter.fetchTweet(
+        "https://x.com/test_user/status/123456789",
+      );
 
       expect(result).toBeDefined();
       expect(result?.url).toBe("https://x.com/test_user/status/123456789");
@@ -63,7 +67,9 @@ describe("VxTwitterAdapter", () => {
 
       await adapter.fetchTweet("https://x.com/user/status/123");
 
-      expect(mockApi.getPostInformation).toHaveBeenCalledWith("https://api.vxtwitter.com/user/status/123");
+      expect(mockApi.getPostInformation).toHaveBeenCalledWith(
+        "https://api.vxtwitter.com/user/status/123",
+      );
     });
 
     it("twitter.com の URL も変換できる", async () => {
@@ -71,14 +77,22 @@ describe("VxTwitterAdapter", () => {
 
       await adapter.fetchTweet("https://twitter.com/user/status/123");
 
-      expect(mockApi.getPostInformation).toHaveBeenCalledWith("https://api.vxtwitter.com/user/status/123");
+      expect(mockApi.getPostInformation).toHaveBeenCalledWith(
+        "https://api.vxtwitter.com/user/status/123",
+      );
     });
 
     it("画像メディアを含むツイートを変換できる", async () => {
       const vxData = createVxTwitterData({
         mediaURLs: ["https://example.com/photo.jpg"],
         media_extended: [
-          { altText: null, size: [], thumbnail_url: "https://example.com/photo.jpg", type: "photo", url: "https://example.com/photo.jpg" },
+          {
+            altText: null,
+            size: [],
+            thumbnail_url: "https://example.com/photo.jpg",
+            type: "photo",
+            url: "https://example.com/photo.jpg",
+          },
         ],
       });
       mockApi.getPostInformation.mockResolvedValue(vxData);
@@ -94,7 +108,13 @@ describe("VxTwitterAdapter", () => {
       const vxData = createVxTwitterData({
         mediaURLs: ["https://example.com/video.mp4"],
         media_extended: [
-          { altText: null, size: [], thumbnail_url: "https://example.com/thumb.jpg", type: "video", url: "https://example.com/video.mp4" },
+          {
+            altText: null,
+            size: [],
+            thumbnail_url: "https://example.com/thumb.jpg",
+            type: "video",
+            url: "https://example.com/video.mp4",
+          },
         ],
       });
       mockApi.getPostInformation.mockResolvedValue(vxData);
@@ -103,7 +123,9 @@ describe("VxTwitterAdapter", () => {
 
       expect(result?.media).toHaveLength(1);
       expect(result?.media[0].type).toBe("video");
-      expect(result?.media[0].thumbnailUrl).toBe("https://example.com/thumb.jpg");
+      expect(result?.media[0].thumbnailUrl).toBe(
+        "https://example.com/thumb.jpg",
+      );
     });
 
     it("引用ツイート（qrt）を含む場合 quote が設定される", async () => {
@@ -128,7 +150,10 @@ describe("VxTwitterAdapter", () => {
 
     it("qrt が入れ子 2階層目は変換しない（depth 制限）", async () => {
       const deepQrt = createVxTwitterData({ text: "deep nested" });
-      const quotedData = createVxTwitterData({ qrt: deepQrt, text: "level 1 quote" });
+      const quotedData = createVxTwitterData({
+        qrt: deepQrt,
+        text: "level 1 quote",
+      });
       const vxData = createVxTwitterData({ qrt: quotedData });
       mockApi.getPostInformation.mockResolvedValue(vxData);
 
@@ -147,9 +172,13 @@ describe("VxTwitterAdapter", () => {
     });
 
     it("VxTwitterServerError は再スローする", async () => {
-      mockApi.getPostInformation.mockRejectedValue(new VxTwitterServerError(500, "Internal Server Error"));
+      mockApi.getPostInformation.mockRejectedValue(
+        new VxTwitterServerError(500, "Internal Server Error"),
+      );
 
-      await expect(adapter.fetchTweet("https://x.com/user/status/123")).rejects.toThrow(VxTwitterServerError);
+      await expect(
+        adapter.fetchTweet("https://x.com/user/status/123"),
+      ).rejects.toThrow(VxTwitterServerError);
     });
 
     it("一般エラーは undefined を返す", async () => {
