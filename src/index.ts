@@ -1,6 +1,7 @@
 import fs from "node:fs";
 import path from "node:path";
 
+import { DASHBOARD_VERSION_FALLBACK, DASHBOARD_VERSION_KEY } from "@twitterrx/shared";
 import { Client, GatewayIntentBits, Message, Partials, ChannelType } from "discord.js";
 
 import { DiscordEmbedBuilder } from "@/adapters/discord/EmbedBuilder";
@@ -30,9 +31,6 @@ const ENV = process.env.NODE_ENV;
 
 const packageJson = JSON.parse(fs.readFileSync(path.join(ROOT_DIR, "package.json"), "utf8"));
 const version = packageJson.version;
-
-const dashboardPackageJson = JSON.parse(fs.readFileSync(path.join(ROOT_DIR, "dashboard", "package.json"), "utf8"));
-const dashboardVersion = dashboardPackageJson.version;
 
 // === Application Mode === // Todo export to other file
 let appMode: ApplicationMode = ApplicationMode.Production;
@@ -161,10 +159,10 @@ client.on("clientReady", async () => {
     logger.error("[Bot] Failed to cleanup orphaned configs:", err);
   }
 
-  updateStatus();
+  await updateStatus();
 
   // update per 5 min.
-  setInterval(updateStatus, 5 * 60 * 1000);
+  setInterval(() => void updateStatus(), 5 * 60 * 1000);
 
   // P0: channels定期リフレッシュ（10分ごと）
   setInterval(
@@ -287,9 +285,19 @@ client.on("guildDelete", async (guild) => {
   await client.login(token);
 })();
 
-const updateStatus = () => {
+const updateStatus = async () => {
   const serverCount = client.guilds.cache.size;
-  client.user?.setActivity(`v${version} (Dashboard v${dashboardVersion}), 導入サーバー数: ${serverCount}`);
+
+  let dashboardVersion: string;
+  try {
+    const redis = (await import("@/db/init")).redis;
+    const value = await redis.get(DASHBOARD_VERSION_KEY);
+    dashboardVersion = value ? `v${value}` : DASHBOARD_VERSION_FALLBACK;
+  } catch {
+    dashboardVersion = DASHBOARD_VERSION_FALLBACK;
+  }
+
+  client.user?.setActivity(`v${version}(Dashboard ${dashboardVersion}), 導入サーバー数: ${serverCount}`);
 };
 
 // P0: Graceful shutdown
