@@ -1,296 +1,228 @@
-# replyvxtwitter
+# TwitterRX
 
 [![CI](https://github.com/t1nyb0x/discord-twitter-embed-rx/actions/workflows/ci.yml/badge.svg)](https://github.com/t1nyb0x/discord-twitter-embed-rx/actions/workflows/ci.yml)
 [![codecov](https://codecov.io/gh/t1nyb0x/discord-twitter-embed-rx/branch/main/graph/badge.svg)](https://codecov.io/gh/t1nyb0x/discord-twitter-embed-rx)
 
-## これは何
-
-Twitter（X）の投稿URLをDiscord上に発信すると、[vxTwitter](https://github.com/dylanpdx/BetterTwitFix)のAPIから内容を取得し、Discord上に展開します。
+Twitter（X）の投稿 URL が Discord に送信されると、[vxTwitter](https://github.com/dylanpdx/BetterTwitFix) / [FxTwitter](https://github.com/FixTweet/FxTwitter) の API から内容を取得し、Embed として展開する Discord Bot です。
 
 ![実行例](./md/image.png)
 
+## 主な機能
+
+- Twitter / X の URL を検出して自動で Embed 展開
+- 画像・動画などのメディア添付に対応
+- **Dashboard（Web UI）** からチャンネルごとの応答設定が可能
+- Redis による設定キャッシュと pub/sub でリアルタイム反映
+
+## 構成
+
+```
+TwitterRX/
+├── src/                  # Bot 本体（TypeScript）
+├── packages/shared/      # Bot・Dashboard 共通パッケージ
+├── dashboard/            # Web Dashboard（Git サブモジュール・別リポジトリ）
+├── compose.yml           # ローカル開発用 Docker Compose
+├── compose.yml.example   # 本番デプロイ用（GHCR イメージ）
+└── .config/              # アプリケーション設定（config.yml）
+```
+
+### 技術スタック
+
+| コンポーネント      | 技術                                        |
+| ------------------- | ------------------------------------------- |
+| Bot                 | Node.js 24 / TypeScript / discord.js v14    |
+| Dashboard           | Astro（SSR）/ Preact / Drizzle ORM / SQLite |
+| キャッシュ・Pub/Sub | Redis 8                                     |
+| テスト              | Vitest                                      |
+| Lint / Format       | oxlint / oxfmt                              |
+
 ## セットアップ
+
+### 前提条件
+
+- Node.js 24+
+- Docker & Docker Compose（Docker で動かす場合）
+- [Discord Developer Portal](https://discord.com/developers/applications) でアプリケーションを作成済み
+
+Bot の招待時に必要なパーミッション（bot scope）：
+
+- チャンネルを表示
+- メッセージを送る
+- メッセージを管理
+- リンクを埋め込み
+- ファイルを添付
+- メッセージ履歴を読む
+- 低速モードを回避
+-
 
 ### リポジトリのクローン
 
-このプロジェクトは Dashboard を Git サブモジュールとして管理しています。
-初回クローン時は以下のコマンドを実行してください：
+Dashboard を Git サブモジュールとして管理しています。
 
 ```bash
 # サブモジュールを含めてクローン
 git clone --recurse-submodules https://github.com/t1nyb0x/discord-twitter-embed-rx.git
 
-# または、既にクローン済みの場合
+# すでにクローン済みの場合
 git submodule update --init --recursive
 ```
 
-### Dashboard の開発
-
-Dashboard は別リポジトリで管理されています：
-- リポジトリ: [discord-twitter-embed-rx-dashboard](https://github.com/t1nyb0x/discord-twitter-embed-rx-dashboard)
-- 詳細な手順は `dashboard/README.md` をご参照ください
-
-## 使い方
-
-### 前提
-
-Discord Developer Portalよりアプリケーションの作成を行ってください。
-https://discord.com/developers/applications
-
-作成の上、`.env.example` を `.env` へコピーしてトークンを設定してください。
-
-productionとdevelopがありますが、どちらを設定しても動作に変わりはありません。本番と開発で2アカウント使用する場合にそれぞれセットする運用になります。
-
-作成したアプリケーションは、使用したいサーバーに招待する必要があります。
-
-パーミッションは
-- bot scope
-  - Send Messages
-  - Embed Links
-  - Read message History
-
-の設定で問題ないかと思います。
-
-### Dashboard (v2.0) を使う場合
-
-Dashboard を使用すると、Web UI からチャンネルごとの応答設定ができます。
-
-#### 1. Dashboard の環境設定
+### 環境変数の設定
 
 ```bash
-# Dashboard の .env.example をコピー
+cp .env.example .env
+```
+
+`.env` に以下を設定してください：
+
+| 変数                                 | 説明                                                              |
+| ------------------------------------ | ----------------------------------------------------------------- |
+| `PRODUCTION_TOKEN` / `DEVELOP_TOKEN` | Discord Bot トークン                                              |
+| `NODE_ENV`                           | `production` または `develop`                                     |
+| `REDIS_URL`                          | Redis 接続先（Docker 使用時は `compose.yml` で自動設定）          |
+| `LOG_LEVEL`                          | `debug` / `info` / `warn` / `error`（省略時は `config.yml` の値） |
+
+フォールバック設定（Dashboard 使用時）：
+
+| 変数                        | 説明                                                 | デフォルト |
+| --------------------------- | ---------------------------------------------------- | ---------- |
+| `REDIS_DOWN_FALLBACK`       | Redis 障害時の挙動。`deny`: 全無視 / `allow`: 全許可 | `deny`     |
+| `CONFIG_NOT_FOUND_FALLBACK` | 設定未作成時の挙動                                   | `deny`     |
+| `ENABLE_ORPHAN_CLEANUP`     | 起動時に孤立した設定キーを掃除                       | `false`    |
+
+## 起動方法
+
+### Docker Compose（推奨）
+
+Bot + Dashboard + Redis の 3 コンテナ構成で起動します。
+
+```bash
+# Dashboard の環境変数も設定
 cp dashboard/.env.example dashboard/.env
-```
+# dashboard/.env を編集（OAuth2 設定・SESSION_SECRET 等）
 
-`dashboard/.env` を編集し、以下を設定してください：
-
-```env
-# Discord OAuth2 (Developer Portal で取得)
-DISCORD_OAUTH2_CLIENT_ID=your_client_id
-DISCORD_OAUTH2_CLIENT_SECRET=your_client_secret
-DISCORD_OAUTH2_REDIRECT_URI=https://yourdomain.com/api/auth/discord/callback
-
-# セッション暗号化用（必ず変更すること！）
-SESSION_SECRET=$(openssl rand -base64 32)
-ENCRYPTION_SALT=$(openssl rand -base64 32)
-
-# Database (デフォルトのまま)
-DATABASE_URL=file:./data/dashboard.db
-
-# Redis (docker-compose の場合)
-REDIS_URL=redis://redis:6379
-```
-
-**⚠️ 重要**: `SESSION_SECRET` と `ENCRYPTION_SALT` は必ず生成してください！
-デフォルト値のまま使用すると、セキュリティリスクがあります。
-
-#### 2. Docker Compose で起動
-
-```bash
-# 3コンテナ構成で起動（Bot + Dashboard + Redis）
+# 起動
 docker compose up -d
 
 # ログ確認
 docker compose logs -f
 ```
 
-#### 3. nginx リバースプロキシを使う場合（本番推奨）
+> **⚠️** `dashboard/.env` の `SESSION_SECRET` と `ENCRYPTION_SALT` は必ず生成してください。
+>
+> ```bash
+> openssl rand -base64 32
+> ```
+
+### Bot のみ（Dashboard なし）
 
 ```bash
-# nginx 込みの構成を使用
-cp compose.yml.with-nginx compose.yml
+npm install
+npm run build
+npm start
+```
 
-# SSL 証明書を配置（開発環境用の自己署名証明書を生成する例）
-openssl req -x509 -nodes -days 365 -newkey rsa:2048 \
-  -keyout docker/nginx/ssl/key.pem \
-  -out docker/nginx/ssl/cert.pem \
-  -subj "/CN=localhost"
+Redis だけ必要な場合は `compose.yml.db-only` を使用してください。
 
-# nginx の設定ファイルを編集（必要に応じて）
-vim docker/nginx/conf.d/dashboard.conf
+### 本番デプロイ（GHCR イメージ）
 
-# 起動
+`compose.yml.example` を参考に、VPS 上に配置してください。
+
+```bash
+# VPS 上で
+mkdir -p ~/TwitterRX/dashboard
+# .env, dashboard/.env を配置
+cp compose.yml.example ~/TwitterRX/compose.yml
+
 docker compose up -d
 ```
 
-本番環境で Let's Encrypt を使う場合は、`compose.yml.with-nginx` のコメントを参照してください。
+詳細は `compose.yml.example` 内のコメントを参照してください。
 
-#### 4. Dashboard にアクセス
+## 設定ファイル
 
-- 開発環境: `http://localhost:4321`
-- nginx 使用時: `https://yourdomain.com`
+`.config/config.yml` でアプリケーションの動作をカスタマイズできます。
 
-Discord OAuth2 でログインし、サーバー設定ページでチャンネルごとの応答設定ができます！
-
-### ローカルで動かす場合（Bot のみ）
-
-`npm run compile && npm start`
-
-### Dockerを利用する場合（従来版）
-
-1. `cp compose.yml.example compose.yml` を実行
-2. `docker compose up -d` で立ち上がります
+| 設定                       | 説明                                             | デフォルト       |
+| -------------------------- | ------------------------------------------------ | ---------------- |
+| `media_max_file_size`      | Discord に添付するメディアの上限サイズ（バイト） | `5242800`（5MB） |
+| `logging.logLevel`         | ログレベル（環境変数 `LOG_LEVEL` が優先）        | `info`           |
+| `logging.maxFiles`         | ログファイル保持期間                             | `14d`            |
+| `logging.maxSize`          | ログファイル最大サイズ                           | `20m`            |
+| `logging.separateErrorLog` | エラーログを別ファイルに分離                     | `true`           |
 
 ## テスト
 
-このプロジェクトはVitestを使用してテストを実装しています。
-
-### テストの実行
-
 ```bash
-# すべてのテストを実行
+# すべてのテスト
 npm test
 
-# ユニットテストのみ実行
+# ユニットテストのみ
 npm run test:unit
 
-# 統合テストのみ実行（実際のAPI呼び出しを含む）
+# 統合テスト（実際の API 呼び出しを含む）
 npm run test:integration
 
-# UIモードで実行
-npm run test:ui
+# E2E テスト
+npm run test:e2e
 
-# カバレッジレポート付きで実行
+# カバレッジレポート
 npm run test:coverage
 ```
 
-### テスト構造
-
-```
-tests/
-├── unit/                   # ユニットテスト
-│   ├── core/              # ビジネスロジックのテスト
-│   ├── adapters/          # アダプター層のテスト
-│   └── infrastructure/    # インフラ層のテスト（未実装）
-├── integration/           # 統合テスト
-│   └── twitter-api.test.ts # 実際のTwitter API呼び出しテスト
-└── fixtures/              # テストデータ
-    ├── mock-tweets.ts
-    └── test-urls.ts
-```
-
-詳細なテスト仕様については [testspec.md](./md/testspec.md) を参照してください。
-
 ## アーキテクチャ
 
-このプロジェクトは軽量レイヤードアーキテクチャを採用しています。
-詳細は [ARCHITECTURE.md](./ARCHITECTURE.md) を参照してください。
+軽量レイヤードアーキテクチャを採用しています。
+詳細は [docs/ARCHITECTURE.md](./docs/ARCHITECTURE.md) を参照してください。
+
+```
+src/
+├── index.ts              # エントリーポイント
+├── config/               # アプリケーション設定
+├── core/                 # ビジネスロジック（TweetProcessor, MediaHandler）
+├── adapters/             # 外部接続（Discord, Twitter API）
+├── infrastructure/       # HTTP クライアント・DB
+├── fxtwitter/            # FxTwitter API
+├── vxtwitter/            # vxTwitter API
+├── db/                   # Redis 接続・リプライログ
+└── utils/                # ロガー等
+```
 
 ## トラブルシューティング
 
-Dashboard 機能を使用している場合の障害対応クイックリファレンスです。
-
 ### 症状別 対応フロー
 
-| 症状 | 原因の可能性 | 確認コマンド | 復旧手順 |
-|------|-------------|-------------|---------|
-| Bot が全く反応しない | Redis ダウン | `docker compose exec redis redis-cli ping` | `docker compose restart redis` |
-| 設定変更が反映されない | pub/sub 切断 | ログで `Subscribe` を確認 | `docker compose restart twitter-rx` |
-| Dashboard にログインできない | Redis ダウン or セッション期限切れ | Redis ping 確認 | Redis 再起動 or 再ログイン |
-| 設定が「全許可」に戻った | Redis キー消失 | 設定キー確認 | `docker compose restart dashboard` |
-
-### 確認コマンド集
-
-```bash
-# Redis 状態確認
-docker compose exec redis redis-cli ping
-# 期待値: PONG
-
-# Bot のヘルスチェックログ確認
-docker compose logs twitter-rx | grep -E "(Health|HEALTH|Subscribe|subscribe)"
-
-# 設定キーの存在確認
-docker compose exec redis redis-cli keys "app:guild:*:config" | head -10
-
-# 特定ギルドの設定確認（YOUR_GUILD_ID を実際の ID に置き換え）
-docker compose exec redis redis-cli get "app:guild:YOUR_GUILD_ID:config"
-
-# Bot 参加状態確認
-docker compose exec redis redis-cli keys "app:guild:*:joined"
-
-# Dashboard 強制 reseed（Redis キー消失時）
-docker compose restart dashboard
-```
+| 症状                         | 原因の可能性               | 確認コマンド                               | 復旧手順                                          |
+| ---------------------------- | -------------------------- | ------------------------------------------ | ------------------------------------------------- |
+| Bot が全く反応しない         | Redis ダウン               | `docker compose exec redis redis-cli ping` | `docker compose restart redis`                    |
+| 設定変更が反映されない       | Pub/Sub 切断               | ログで `Subscribe` を確認                  | `docker compose restart twitter-rx`               |
+| Dashboard にログインできない | Redis / セッション期限切れ | Redis ping 確認                            | Redis 再起動 or 再ログイン                        |
+| 設定が初期化された           | Redis キー消失             | `redis-cli keys "app:guild:*:config"`      | `docker compose restart dashboard`（reseed 発動） |
 
 ### バックアップと復旧
 
-Dashboard v2.0 では **named volume** 方式でデータを永続化しています。
-
-#### 定期バックアップ（推奨: 日次）
+Dashboard は named volume でデータを永続化しています。
 
 ```bash
-# SQLite (Dashboard 設定データ) のバックアップ
+# SQLite バックアップ
 docker run --rm \
   -v twitterrx_dashboard_data:/source:ro \
   -v $(pwd)/backup:/backup \
   alpine tar cvf /backup/dashboard-$(date +%Y%m%d).tar -C /source .
 
-# Redis (キャッシュ・セッション) のバックアップ
+# Redis バックアップ
 docker run --rm \
   -v twitterrx_redis_data:/source:ro \
   -v $(pwd)/backup:/backup \
   alpine tar cvf /backup/redis-$(date +%Y%m%d).tar -C /source .
 ```
 
-#### 復旧手順
+Redis が消えた場合は Dashboard を再起動すれば SQLite → Redis への reseed が自動実行されます。
 
-**SQLite が破損した場合**:
+## 関連リポジトリ
 
-```bash
-# Dashboard を停止
-docker compose stop dashboard
+- [Dashboard](https://github.com/t1nyb0x/discord-twitter-embed-rx-dashboard) — Web UI（`dashboard/` サブモジュール）
 
-# バックアップから復元（YYYYMMDD を実際の日付に置き換え）
-docker run --rm \
-  -v twitterrx_dashboard_data:/target \
-  -v $(pwd)/backup:/backup \
-  alpine tar xvf /backup/dashboard-YYYYMMDD.tar -C /target
+## ライセンス
 
-# Dashboard を再起動
-docker compose start dashboard
-```
-
-**Redis が消えた場合**:
-
-```bash
-# Dashboard を再起動すると SQLite → Redis への reseed が実行されます
-docker compose restart dashboard
-
-# Bot を再起動すると joined キーが復旧します
-docker compose restart twitter-rx
-```
-
-**両方消えた場合**:
-
-```bash
-# 1. SQLite を先に復元
-docker compose stop dashboard
-docker run --rm \
-  -v twitterrx_dashboard_data:/target \
-  -v $(pwd)/backup:/backup \
-  alpine tar xvf /backup/dashboard-YYYYMMDD.tar -C /target
-
-# 2. Dashboard を起動（reseed が発動）
-docker compose start dashboard
-
-# 3. Bot を起動（joined が復旧）
-docker compose start twitter-rx
-```
-
-#### バックアップの保持期間
-
-| データ | 推奨保持期間 | 理由 |
-|--------|--------------|------|
-| SQLite | 30日以上 | 設定の永続データ、復旧に必須 |
-| Redis | 7日程度 | reseed で復旧可能なため短めでも可 |
-
-### 環境変数による挙動制御
-
-| 変数 | 説明 | デフォルト |
-|------|------|-----------|
-| `REDIS_DOWN_FALLBACK` | Redis 障害時の挙動。`deny`: 全無視、`allow`: 全許可 | `deny` |
-| `CONFIG_NOT_FOUND_FALLBACK` | 設定未作成時の挙動。`deny`: 全無視、`allow`: 全許可 | `deny` |
-| `ENABLE_ORPHAN_CLEANUP` | 起動時の孤立キー掃除 | `false` |
-| `AUDIT_LOG_RETENTION_DAYS` | 監査ログ保持日数（0 で無制限） | `180` |
-
-詳細な仕様は [docs/DASHBOARD_SPEC.md](./docs/DASHBOARD_SPEC.md) を参照してください。
+[MIT](./LICENSE)
