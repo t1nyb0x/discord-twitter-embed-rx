@@ -31,23 +31,28 @@ jobs:
             echo "has_changes=true" >> "$GITHUB_OUTPUT"
           fi
 
-      - name: Delete existing PR branch
+      - name: Commit and force-push
         if: steps.changes.outputs.has_changes == 'true'
         run: |
-          git push origin --delete chore/update-dashboard-submodule || true
-          git branch -D chore/update-dashboard-submodule || true
+          git checkout -B chore/update-dashboard-submodule
+          git add dashboard
+          git commit -m "chore(deps): update dashboard submodule"
+          git push --force origin chore/update-dashboard-submodule
 
-      - name: Create Pull Request
+      - name: Create or update Pull Request
         if: steps.changes.outputs.has_changes == 'true'
-        uses: peter-evans/create-pull-request@v8
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-          branch: chore/update-dashboard-submodule
-          commit-message: "chore(deps): update dashboard submodule"
-          title: "chore(deps): update dashboard submodule"
-          body: |
-            Dashboard リポジトリの更新を検知したため、サブモジュールのポインタを更新します。
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          if gh pr view chore/update-dashboard-submodule --json state -q '.state' 2>/dev/null | grep -q "OPEN"; then
+            echo "PR already exists, force-push updated it"
+          else
+            gh pr create \
+              --base develop \
+              --head chore/update-dashboard-submodule \
+              --title "chore(deps): update dashboard submodule" \
+              --body "Dashboard リポジトリの更新を検知したため、サブモジュールのポインタを更新します。
 
-            Triggered by: ${{ github.event.client_payload.sha }}
-          base: develop
-          labels: dependencies
+          Triggered by: ${{ github.event.client_payload.sha }}" \
+              --label "dependencies"
+          fi
