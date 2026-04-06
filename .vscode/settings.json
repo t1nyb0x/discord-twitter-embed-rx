@@ -4,6 +4,15 @@
   },
   "editor.formatOnSave": true,
   "chat.tools.terminal.autoApprove": {
-    "npx vitest": true
+    "npx vitest": true,
+    "git fetch": true,
+    "git ls-remote": true,
+    ".specify/scripts/bash/create-new-feature.sh": true,
+    ".specify/scripts/bash/check-prerequisites.sh": true,
+    ".specify/scripts/bash/setup-plan.sh": true,
+    ".specify/scripts/bash/update-agent-context.sh": true,
+    "npx oxlint": true,
+    "npx tsc": true,
+    "npx oxfmt": true
   }
 }
