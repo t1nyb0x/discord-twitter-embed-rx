@@ -31,6 +31,9 @@ const ENV = process.env.NODE_ENV;
 const packageJson = JSON.parse(fs.readFileSync(path.join(ROOT_DIR, "package.json"), "utf8"));
 const version = packageJson.version;
 
+const dashboardPackageJson = JSON.parse(fs.readFileSync(path.join(ROOT_DIR, "dashboard", "package.json"), "utf8"));
+const dashboardVersion = dashboardPackageJson.version;
+
 // === Application Mode === // Todo export to other file
 let appMode: ApplicationMode = ApplicationMode.Production;
 switch (ENV) {
@@ -286,7 +289,7 @@ client.on("guildDelete", async (guild) => {
 
 const updateStatus = () => {
   const serverCount = client.guilds.cache.size;
-  client.user?.setActivity(`v${version}, 導入サーバー数: ${serverCount}`);
+  client.user?.setActivity(`v${version} (Dashboard v${dashboardVersion}), 導入サーバー数: ${serverCount}`);
 };
 
 // P0: Graceful shutdown
