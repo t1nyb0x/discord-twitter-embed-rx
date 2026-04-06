@@ -11,7 +11,7 @@ jobs:
     steps:
       - uses: actions/checkout@v6
         with:
-          submodules: 'recursive'
+          submodules: "recursive"
           token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Configure git
@@ -22,19 +22,37 @@ jobs:
       - name: Update dashboard submodule
         run: git submodule update --remote dashboard
 
-      - name: Delete existing PR branch
-        run: git push origin --delete chore/update-dashboard-submodule || true
+      - name: Check for changes
+        id: changes
+        run: |
+          if git diff --quiet; then
+            echo "has_changes=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "has_changes=true" >> "$GITHUB_OUTPUT"
+          fi
 
-      - name: Create Pull Request
-        uses: peter-evans/create-pull-request@v8
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-          branch: chore/update-dashboard-submodule
-          commit-message: "chore(deps): update dashboard submodule"
-          title: "chore(deps): update dashboard submodule"
-          body: |
-            Dashboard リポジトリの更新を検知したため、サブモジュールのポインタを更新します。
+      - name: Commit and force-push
+        if: steps.changes.outputs.has_changes == 'true'
+        run: |
+          git checkout -B chore/update-dashboard-submodule
+          git add dashboard
+          git commit -m "chore(deps): update dashboard submodule"
+          git push --force origin chore/update-dashboard-submodule
 
-            Triggered by: ${{ github.event.client_payload.sha }}
-          base: develop
-          labels: dependencies
+      - name: Create or update Pull Request
+        if: steps.changes.outputs.has_changes == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          if gh pr view chore/update-dashboard-submodule --json state -q '.state' 2>/dev/null | grep -q "OPEN"; then
+            echo "PR already exists, force-push updated it"
+          else
+            gh pr create \
+              --base develop \
+              --head chore/update-dashboard-submodule \
+              --title "chore(deps): update dashboard submodule" \
+              --body "Dashboard リポジトリの更新を検知したため、サブモジュールのポインタを更新します。
+
+          Triggered by: ${{ github.event.client_payload.sha }}" \
+              --label "dependencies"
+          fi
