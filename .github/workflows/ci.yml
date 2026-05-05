@@ -163,8 +163,8 @@ jobs:
 
       - name: Build Dashboard
         run: |
-          npm run db:generate --workspace=@twitterrx/dashboard
-          npm run build --workspace=@twitterrx/dashboard
+          npm run db:generate --prefix dashboard
+          npm run build --prefix dashboard
 
       - name: Check Dashboard build output
         run: |
