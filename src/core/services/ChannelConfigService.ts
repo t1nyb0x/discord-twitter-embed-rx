@@ -1,4 +1,5 @@
 import type { ConfigResult, IChannelConfigRepository } from "@twitterrx/shared";
+import { DEFAULT_MAX_URLS_PER_MESSAGE, MAX_URLS_PER_MESSAGE_LIMIT } from "@twitterrx/shared";
 
 import logger from "@/utils/logger";
 
@@ -86,6 +87,31 @@ export class ChannelConfigService {
   async shutdown(): Promise<void> {
     if ("shutdown" in this.repository && typeof this.repository.shutdown === "function") {
       await this.repository.shutdown();
+    }
+  }
+
+  /**
+   * 1メッセージあたりの最大URL処理数を取得する
+   * 不正値・未設定・Redis障害時は DEFAULT_MAX_URLS_PER_MESSAGE にフォールバック
+   */
+  async getMaxUrlsPerMessage(guildId: string): Promise<number> {
+    try {
+      const result = await this.repository.getConfig(guildId);
+
+      if (result.kind !== "found") {
+        return DEFAULT_MAX_URLS_PER_MESSAGE;
+      }
+
+      const raw = result.data.maxUrlsPerMessage;
+
+      if (typeof raw !== "number" || !Number.isInteger(raw) || raw < 1 || raw > MAX_URLS_PER_MESSAGE_LIMIT) {
+        return DEFAULT_MAX_URLS_PER_MESSAGE;
+      }
+
+      return raw;
+    } catch (err) {
+      logger.error(`[ChannelConfig] Unexpected error in getMaxUrlsPerMessage for guild ${guildId}:`, err);
+      return DEFAULT_MAX_URLS_PER_MESSAGE;
     }
   }
 }
