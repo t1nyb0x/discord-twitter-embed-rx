@@ -6,8 +6,7 @@
   "main": "index.js",
   "private": true,
   "workspaces": [
-    "packages/*",
-    "dashboard"
+    "packages/*"
   ],
   "scripts": {
     "start": "node --env-file=.env dist/index.js",
