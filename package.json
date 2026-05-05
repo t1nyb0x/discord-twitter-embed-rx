@@ -6,8 +6,7 @@
   "main": "index.js",
   "private": true,
   "workspaces": [
-    "packages/*",
-    "dashboard"
+    "packages/*"
   ],
   "scripts": {
     "start": "node --env-file=.env dist/index.js",
@@ -24,7 +23,7 @@
     "test:e2e": "vitest run tests/e2e",
     "test:ui": "vitest --ui",
     "test:coverage": "vitest run --coverage",
-    "test:dashboard": "npm run test --workspace=@twitterrx/dashboard",
+    "test:dashboard": "npm run test --prefix dashboard",
     "lint": "oxlint src/",
     "format": "oxfmt src/"
   },
