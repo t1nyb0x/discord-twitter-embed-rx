@@ -18,6 +18,8 @@ export interface GuildConfig {
   updatedAt: string;
   /** 最終更新者のユーザーID */
   updatedBy?: string;
+  /** 1メッセージあたりの最大処理URL数（1〜5、未設定時はBot側でデフォルト3を使用） */
+  maxUrlsPerMessage?: number;
 }
 
 /**

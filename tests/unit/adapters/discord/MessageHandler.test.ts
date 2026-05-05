@@ -174,6 +174,7 @@ describe("MessageHandler", () => {
     it("channelConfigService が許可を返す場合 URL を処理する", async () => {
       const channelConfigService = {
         isChannelAllowed: vi.fn().mockResolvedValue(true),
+        getMaxUrlsPerMessage: vi.fn().mockResolvedValue(3),
         performHealthCheck: vi.fn(),
       } as unknown as ChannelConfigService;
 
@@ -202,6 +203,7 @@ describe("MessageHandler", () => {
     it("guildId がない場合（DM等）はチャンネル設定チェックをスキップして処理する", async () => {
       const channelConfigService = {
         isChannelAllowed: vi.fn().mockResolvedValue(false),
+        getMaxUrlsPerMessage: vi.fn().mockResolvedValue(3),
         performHealthCheck: vi.fn(),
       } as unknown as ChannelConfigService;
 

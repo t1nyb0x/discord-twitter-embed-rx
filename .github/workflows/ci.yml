@@ -17,12 +17,19 @@ jobs:
         uses: actions/setup-node@v6
         with:
           node-version: 24.x
+          registry-url: "https://npm.pkg.github.com"
+          scope: "@twitterrx"
 
       - name: Sync lockfile with submodule changes
         run: npm install --package-lock-only
 
       - name: Install dependencies
         run: npm ci
+
+      - name: Install dashboard dependencies
+        run: npm install --prefix dashboard
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Cache node_modules
         uses: actions/cache/save@v5
@@ -156,8 +163,8 @@ jobs:
 
       - name: Build Dashboard
         run: |
-          npm run db:generate --workspace=@twitterrx/dashboard
-          npm run build --workspace=@twitterrx/dashboard
+          npm run db:generate --prefix dashboard
+          npm run build --prefix dashboard
 
       - name: Check Dashboard build output
         run: |
