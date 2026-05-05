@@ -1,0 +1,37 @@
+name: Publish @twitterrx/shared
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - "packages/shared/**"
+
+permissions:
+  contents: read
+  packages: write
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: 24.x
+          registry-url: "https://npm.pkg.github.com"
+          scope: "@twitterrx"
+
+      - name: Install dependencies
+        run: npm ci --workspace=@twitterrx/shared
+
+      - name: Build
+        run: npm run build --workspace=@twitterrx/shared
+
+      - name: Publish to GitHub Packages
+        run: npm publish --workspace=@twitterrx/shared
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
