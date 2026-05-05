@@ -17,8 +17,6 @@ jobs:
         uses: actions/setup-node@v6
         with:
           node-version: 24.x
-          registry-url: "https://npm.pkg.github.com"
-          scope: "@twitterrx"
 
       - name: Sync lockfile with submodule changes
         run: npm install --package-lock-only
@@ -26,10 +24,14 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Build shared package
+        run: npm run build:shared
+
       - name: Install dashboard dependencies
-        run: npm install --prefix dashboard
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          cd dashboard
+          npm pkg set dependencies["@twitterrx/shared"]="file:../packages/shared"
+          npm install
 
       - name: Cache node_modules
         uses: actions/cache/save@v5
@@ -38,6 +40,7 @@ jobs:
             node_modules
             dashboard/node_modules
             packages/*/node_modules
+            packages/shared/dist
           key: deps-${{ github.run_id }}
 
   test:
@@ -61,6 +64,7 @@ jobs:
             node_modules
             dashboard/node_modules
             packages/*/node_modules
+            packages/shared/dist
           key: deps-${{ github.run_id }}
 
       - name: Run oxlint
@@ -99,6 +103,7 @@ jobs:
             node_modules
             dashboard/node_modules
             packages/*/node_modules
+            packages/shared/dist
           key: deps-${{ github.run_id }}
 
       - name: Build TypeScript
@@ -133,6 +138,7 @@ jobs:
             node_modules
             dashboard/node_modules
             packages/*/node_modules
+            packages/shared/dist
           key: deps-${{ github.run_id }}
 
       - name: Run dashboard tests
@@ -159,6 +165,7 @@ jobs:
             node_modules
             dashboard/node_modules
             packages/*/node_modules
+            packages/shared/dist
           key: deps-${{ github.run_id }}
 
       - name: Build Dashboard

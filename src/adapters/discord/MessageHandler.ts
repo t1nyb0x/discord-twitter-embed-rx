@@ -1,6 +1,7 @@
 import { randomUUID } from "node:crypto";
 import path from "node:path";
 
+import { DEFAULT_MAX_URLS_PER_MESSAGE } from "@twitterrx/shared";
 import {
   ActionRowBuilder,
   AttachmentBuilder,
@@ -148,13 +149,22 @@ export class MessageHandler {
   private async processUrls(client: Client, message: Message, urls: string[], isSpoiler: boolean): Promise<void> {
     if (urls.length === 0) return;
 
-    logger.debug(`Processing ${urls.length} ${isSpoiler ? "spoiler" : "normal"} URLs`, {
-      messageId: message.id,
-      urlCount: urls.length,
-      isSpoiler,
-    });
+    const limit = await this.getUrlLimit(message.guildId);
+    const accepted = urls.slice(0, limit);
+    const ignoredCount = urls.length - accepted.length;
 
-    for (const url of urls) {
+    logger.debug(
+      `Processing ${accepted.length} ${isSpoiler ? "spoiler" : "normal"} URLs (limit: ${limit}, ignored: ${ignoredCount})`,
+      {
+        messageId: message.id,
+        urlCount: accepted.length,
+        limit,
+        ignoredCount,
+        isSpoiler,
+      }
+    );
+
+    for (const url of accepted) {
       try {
         logger.debug("Processing single URL", { url, messageId: message.id, isSpoiler });
         await this.processSingleUrl(client, message, url, isSpoiler);
@@ -179,6 +189,41 @@ export class MessageHandler {
           channelId: message.channelId,
         });
       }
+    }
+
+    if (ignoredCount > 0) {
+      await this.sendIgnoredNotice(message, ignoredCount, urls.length);
+    }
+  }
+
+  /**
+   * URL処理上限を取得する
+   * guildId が null またはサービス未注入の場合はデフォルト値を返す
+   */
+  private async getUrlLimit(guildId: string | null): Promise<number> {
+    if (!guildId || !this.channelConfigService) return DEFAULT_MAX_URLS_PER_MESSAGE;
+    return this.channelConfigService.getMaxUrlsPerMessage(guildId);
+  }
+
+  /**
+   * 上限超過の通知を reply で送信し、約10秒後に自動削除する
+   * 削除失敗時は warn ログのみ（FR-010）
+   */
+  private async sendIgnoredNotice(message: Message, ignoredCount: number, totalCount: number): Promise<void> {
+    try {
+      const notif = await message.reply({
+        content: `${totalCount}件のうち${ignoredCount}件は上限超過のため無視しました。`,
+        allowedMentions: { repliedUser: false },
+      });
+      setTimeout(() => {
+        notif.delete().catch((err: Error) => {
+          logger.warn("[MessageHandler] 上限超過通知の削除に失敗しました", { error: err.message });
+        });
+      }, 10_000);
+    } catch (err) {
+      logger.error("[MessageHandler] 上限超過通知の送信に失敗しました", {
+        error: err instanceof Error ? err.message : String(err),
+      });
     }
   }
 
