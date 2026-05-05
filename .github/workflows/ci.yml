@@ -40,6 +40,7 @@ jobs:
             node_modules
             dashboard/node_modules
             packages/*/node_modules
+            packages/shared/dist
           key: deps-${{ github.run_id }}
 
   test:
@@ -63,6 +64,7 @@ jobs:
             node_modules
             dashboard/node_modules
             packages/*/node_modules
+            packages/shared/dist
           key: deps-${{ github.run_id }}
 
       - name: Run oxlint
@@ -101,6 +103,7 @@ jobs:
             node_modules
             dashboard/node_modules
             packages/*/node_modules
+            packages/shared/dist
           key: deps-${{ github.run_id }}
 
       - name: Build TypeScript
@@ -135,6 +138,7 @@ jobs:
             node_modules
             dashboard/node_modules
             packages/*/node_modules
+            packages/shared/dist
           key: deps-${{ github.run_id }}
 
       - name: Run dashboard tests
@@ -161,6 +165,7 @@ jobs:
             node_modules
             dashboard/node_modules
             packages/*/node_modules
+            packages/shared/dist
           key: deps-${{ github.run_id }}
 
       - name: Build Dashboard

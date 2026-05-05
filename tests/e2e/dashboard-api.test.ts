@@ -105,6 +105,7 @@ describe("E2E: Dashboard API", () => {
 
       const response = await fetch(`${DASHBOARD_URL}/api/guilds/${TEST_GUILD_ID}/channels`, {
         method: "POST",
+        headers: { Origin: DASHBOARD_URL },
       });
       expect(response.status).toBe(401);
 
@@ -118,6 +119,7 @@ describe("E2E: Dashboard API", () => {
       const response = await fetch(`${DASHBOARD_URL}/api/auth/logout`, {
         method: "POST",
         redirect: "manual",
+        headers: { Origin: DASHBOARD_URL },
       });
       expect(response.status).toBe(401);
     });
