@@ -21,7 +21,7 @@ services:
   # Discord Bot
   twitter-rx:
     container_name: TwitterRX_Bot
-    image: ghcr.io/t1nyb0x/discord-twitter-embed-rx:${IMAGE_TAG:-latest}
+    image: ghcr.io/twitterrx/discord-twitter-embed-rx:${IMAGE_TAG:-latest}
     restart: always
     env_file:
       - .env
@@ -38,7 +38,7 @@ services:
   # Dashboard（Astro SSR）
   dashboard:
     container_name: TwitterRX_Dashboard
-    image: ghcr.io/t1nyb0x/discord-twitter-embed-rx-dashboard:${IMAGE_TAG:-latest}
+    image: ghcr.io/twitterrx/discord-twitter-embed-rx-dashboard:${IMAGE_TAG:-latest}
     restart: always
     env_file:
       - ./dashboard/.env
