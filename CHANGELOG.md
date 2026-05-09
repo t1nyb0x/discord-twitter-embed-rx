@@ -1,5 +1,17 @@
 # Changelog
 
+## [2.2.0](https://github.com/twitterrx/discord-twitter-embed-rx/compare/v2.1.0...v2.2.0) (2026-05-09)
+
+
+### Features
+
+* 1メッセージあたりの最大URL処理数機能を追加 ([d6194e7](https://github.com/twitterrx/discord-twitter-embed-rx/commit/d6194e74e93abdadcc75febff21a61395f3736d5))
+* 1メッセージあたりの最大URL処理数機能を追加 ([7807b5a](https://github.com/twitterrx/discord-twitter-embed-rx/commit/7807b5a749d002281323b5be201ac830aa86b718))
+* 1メッセージあたりの最大URL処理数機能を追加 ([3099f95](https://github.com/twitterrx/discord-twitter-embed-rx/commit/3099f95b9dc91ea6a69640dbc37f3ed4ca7c7035))
+* 定数追加 ([3900c9d](https://github.com/twitterrx/discord-twitter-embed-rx/commit/3900c9d186f525221acea983f87e07d356c0515e))
+* 定数追加 ([834c6ce](https://github.com/twitterrx/discord-twitter-embed-rx/commit/834c6ce271ebe89e33a3d370b0527b0d7fa06c20))
+* 定数追加 ([e320783](https://github.com/twitterrx/discord-twitter-embed-rx/commit/e3207831e74244526e6c467ef9119bd8c66f8ff7))
+
 ## [2.1.0](https://github.com/t1nyb0x/discord-twitter-embed-rx/compare/v2.0.1...v2.1.0) (2026-03-31)
 
 
